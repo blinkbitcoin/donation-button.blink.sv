@@ -592,8 +592,7 @@
         },
         
         // Handle the donation process
-        handleDonate: async function(event) {
-            event.preventDefault();
+        handleDonate: async function() {
             this.log('Donate button clicked');
             
             const amountInput = document.getElementById('blink-pay-amount');
@@ -620,7 +619,13 @@
                 
                 let exchangeRate = this.exchangeRates[this.selectedCurrency];
                 if (!exchangeRate) {
-                    throw new Error(`Exchange rate not available for ${this.selectedCurrency.toUpperCase()}`);
+                    // If we don't have the exchange rate, try to fetch it
+                    try {
+                        await this.fetchExchangeRate(this.selectedCurrency);
+                        exchangeRate = this.exchangeRates[this.selectedCurrency];
+                    } catch (error) {
+                        return; // Error already shown in fetchExchangeRate
+                    }
                 }
                 
                 amountInSats = Math.round(amount * exchangeRate);
@@ -634,16 +639,22 @@
                 this.log(`Processing donation: ${amount} ${this.selectedCurrency} (${amountInSats} sats)`);
                 
                 // Step 1: Get wallet ID
-                const walletId = await this.getWalletId();
+                const walletId = await this.getAccountDefaultWalletId(this.username);
+                if (!walletId) {
+                    throw new Error('Could not retrieve wallet ID for this username');
+                }
                 this.log(`Retrieved wallet ID: ${walletId}`);
                 
                 // Step 2: Create invoice
-                const invoiceData = await this.createInvoice(walletId, amountInSats);
-                this.log(`Created invoice`, invoiceData);
+                const paymentRequest = await this.createInvoice(walletId, amountInSats);
+                if (!paymentRequest) {
+                    throw new Error('Could not create invoice');
+                }
+                this.log(`Created invoice`, { paymentRequest: paymentRequest.substring(0, 30) + '...' });
                 
                 // Step 3: Show QR code and set up payment monitoring
-                this.showQRCode(invoiceData.paymentRequest);
-                this.subscribeToPaymentStatus(invoiceData.paymentRequest);
+                this.displayInvoice(paymentRequest);
+                this.subscribeToPaymentStatus(paymentRequest);
                 
             } catch (error) {
                 this.log(`Error in donation process: ${error.message}`, error);
