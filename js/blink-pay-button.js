@@ -1,7 +1,7 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.3.0 - Added comprehensive global language support (35+ languages)
+ * Version: 1.2.3 - Reduced button font size by 2pts for better appearance
  */
 (function() {
     // Translation objects for multi-language support
@@ -771,7 +771,7 @@
                     border: none;
                     border-radius: 8px;
                     cursor: pointer;
-                    font-size: 16px;
+                    font-size: 14px;
                     font-weight: 600;
                     text-align: center;
                     transition: all 0.2s;
@@ -1509,12 +1509,12 @@
             // Get button's available width (subtract padding)
             const buttonWidth = button.clientWidth - 24; // 12px padding on each side
             
-            // Start with maximum font size and reduce until it fits
-            let fontSize = 16;
+            // Start with maximum font size and reduce until it fits (2pts smaller than before)
+            let fontSize = 14;
             tempSpan.style.fontSize = fontSize + 'px';
             
             // Reduce font size until text fits
-            while (tempSpan.offsetWidth > buttonWidth && fontSize > 8) {
+            while (tempSpan.offsetWidth > buttonWidth && fontSize > 6) {
                 fontSize -= 0.5;
                 tempSpan.style.fontSize = fontSize + 'px';
             }
@@ -1563,7 +1563,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.2.2');
+            params.append('widget_version', '1.2.3');
             
             return `${baseUrl}?${params.toString()}`;
         }
