@@ -16,6 +16,7 @@ The widget currently supports the following languages:
 - **Chinese** (`zh`) - 中文
 - **Russian** (`ru`) - Русский
 - **Arabic** (`ar`) - العربية
+- **Turkish** (`tr`) - Türkçe
 
 ## Usage
 

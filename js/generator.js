@@ -38,7 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
         { code: 'ja', name: '日本語' },
         { code: 'zh', name: '中文' },
         { code: 'ru', name: 'Русский' },
-        { code: 'ar', name: 'العربية' }
+        { code: 'ar', name: 'العربية' },
+        { code: 'tr', name: 'Türkçe' }
     ];
     
     // Toggle site theme between light and dark

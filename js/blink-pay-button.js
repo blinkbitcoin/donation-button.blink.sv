@@ -1,7 +1,7 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.1.1 - Multi-language with bug fixes
+ * Version: 1.2.0 - Added Turkish language and dynamic font sizing
  */
 (function() {
     // Translation objects for multi-language support
@@ -155,6 +155,21 @@
             pleaseTryAgain: 'يرجى المحاولة مرة أخرى.',
             anErrorOccurred: 'حدث خطأ أثناء معالجة تبرعك',
             qrCodeAlt: 'رمز QR لفاتورة Lightning'
+        },
+        tr: {
+            buttonText: 'Bitcoin Bağışla',
+            copyInvoice: 'Faturayı Kopyala',
+            copied: 'Kopyalandı!',
+            paymentSuccessful: 'Ödeme Başarılı. Bağışınız için teşekkürler.',
+            loading: 'Yükleniyor...',
+            invoiceCopied: 'Fatura panoya kopyalandı',
+            failedToCopy: 'Fatura kopyalanamadı',
+            pleaseEnterValidAmount: 'Lütfen geçerli bir miktar girin',
+            amountMustBeAtLeast: 'Miktar en az olmalıdır',
+            failedToFetchExchangeRate: 'Döviz kuru alınamadı',
+            pleaseTryAgain: 'Lütfen tekrar deneyin.',
+            anErrorOccurred: 'Bağışınız işlenirken bir hata oluştu',
+            qrCodeAlt: 'Lightning Fatura QR Kodu'
         }
     };
 
@@ -378,12 +393,19 @@
                     border: none;
                     border-radius: 8px;
                     cursor: pointer;
-                    font-size: 16px;
+                    font-size: clamp(12px, 2.5vw, 16px);
                     font-weight: 600;
                     text-align: center;
                     transition: all 0.2s;
                     font-family: 'IBM Plex Sans', sans-serif;
                     margin-bottom: 10px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    min-height: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
                 .${this.buttonClass}.success {
                     background: #00a700;
@@ -798,7 +820,7 @@
             
             // Update the button for copy to clipboard functionality
             const donateButton = document.getElementById('blink-pay-button');
-            donateButton.textContent = this.t('copyInvoice');
+            this.updateButtonText(donateButton, this.t('copyInvoice'));
             
             // Remove all existing event listeners by cloning and replacing the button
             const newButton = donateButton.cloneNode(true);
@@ -810,9 +832,9 @@
                     this.showStatus('success', this.t('invoiceCopied'));
                     
                     // Change button text temporarily to show success
-                    newButton.textContent = this.t('copied');
+                    this.updateButtonText(newButton, this.t('copied'));
                     setTimeout(() => {
-                        newButton.textContent = this.t('copyInvoice');
+                        this.updateButtonText(newButton, this.t('copyInvoice'));
                     }, 1500);
                     
                 }).catch(err => {
@@ -1005,7 +1027,7 @@
             const donateButton = document.getElementById('blink-pay-button');
             
             // Update button text and style
-            donateButton.textContent = this.t('paymentSuccessful');
+            this.updateButtonText(donateButton, this.t('paymentSuccessful'));
             donateButton.classList.add('success');
             
             // Clear status as the message is now in the button
@@ -1019,7 +1041,7 @@
             newButton.addEventListener('click', () => {
                 // Reset the widget back to initial state
                 successContainer.style.display = 'none';
-                newButton.textContent = this.t('buttonText');
+                this.updateButtonText(newButton, this.t('buttonText'));
                 newButton.classList.remove('success');
                 
                 // Show input field again
@@ -1076,6 +1098,45 @@
             b = Math.max(0, Math.min(255, b + percent));
             
             return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        },
+        
+        // Dynamically adjust button font size based on text length
+        adjustButtonFontSize: function(button, text) {
+            if (!button || !text) return;
+            
+            // Reset to default first
+            button.style.fontSize = '';
+            
+            const textLength = text.length;
+            let fontSize;
+            
+            // Adjust font size based on text length
+            if (textLength <= 15) {
+                fontSize = '16px'; // Normal size for short text
+            } else if (textLength <= 25) {
+                fontSize = '14px'; // Slightly smaller for medium text
+            } else if (textLength <= 35) {
+                fontSize = '12px'; // Smaller for long text
+            } else {
+                fontSize = '11px'; // Very small for very long text
+            }
+            
+            button.style.fontSize = fontSize;
+            
+            // Double-check if text still overflows and reduce further if needed
+            setTimeout(() => {
+                if (button.scrollWidth > button.clientWidth) {
+                    const currentSize = parseInt(button.style.fontSize);
+                    button.style.fontSize = Math.max(currentSize - 1, 10) + 'px';
+                }
+            }, 10);
+        },
+        
+        // Update button text with dynamic font sizing
+        updateButtonText: function(button, text) {
+            if (!button) return;
+            button.textContent = text;
+            this.adjustButtonFontSize(button, text);
         }
     };
     
