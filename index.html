@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink Pay Button Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blink-orange: #FB5607;
+            --blink-yellow: #FFB32C;
+            --blink-gradient: linear-gradient(45deg, #fe9f0c, #fc5805);
+            --light-bg: #F8F9FA;
+            --dark-bg: #222222;
+            --light-text: #333333;
+            --dark-text: #FFFFFF;
+            --light-card-bg: #FFFFFF;
+            --dark-card-bg: #333333;
+            --light-border: #E0E0E0;
+            --dark-border: #444444;
+        }
+        
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        body.light-mode {
+            background-color: var(--light-bg);
+            color: var(--light-text);
+        }
+        
+        body.dark-mode {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
+        
+        .theme-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .logo {
+            max-width: 240px;
+            margin-bottom: 1rem;
+        }
+        
+        .page-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .lead {
+            font-weight: 400;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            transition: background-color 0.3s, border-color 0.3s;
+            margin-bottom: 24px;
+            border: none;
+        }
+        
+        .light-mode .card {
+            background-color: var(--light-card-bg);
+            border-color: var(--light-border);
+        }
+        
+        .dark-mode .card {
+            background-color: var(--dark-card-bg);
+            border-color: var(--dark-border);
+        }
+        
+        .card-title {
+            font-weight: 600;
+            color: var(--blink-orange);
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            font-weight: 500;
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            padding: 12px;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+        
+        .light-mode .form-control {
+            background-color: var(--light-card-bg);
+            color: var(--light-text);
+            border-color: var(--light-border);
+        }
+        
+        .dark-mode .form-control {
+            background-color: #444;
+            color: var(--dark-text);
+            border-color: var(--dark-border);
+        }
+        
+        .btn-primary, .btn-success {
+            background: var(--blink-gradient);
+            border: none;
+            font-weight: 600;
+            padding: 12px 20px;
+            border-radius: 8px;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .btn-primary:hover, .btn-success:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+            background: var(--blink-gradient);
+        }
+        
+        .btn-outline-secondary {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .dark-mode .btn-outline-secondary {
+            color: #FFF;
+            border-color: #666;
+        }
+        
+        .code-container {
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+        
+        .light-mode .code-container {
+            background-color: #f1f1f1;
+        }
+        
+        .dark-mode .code-container {
+            background-color: #444;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        
+        pre {
+            white-space: pre-wrap;
+            overflow-x: auto;
+            padding: 0;
+            margin: 0;
+            color: inherit;
+        }
+        
+        .dark-mode pre {
+            color: #CCC;
+        }
+        
+        #widget-preview {
+            border-radius: 12px;
+            padding: 20px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        .light-mode #widget-preview {
+            background-color: var(--light-card-bg);
+            border: 1px solid var(--light-border);
+        }
+        
+        .dark-mode #widget-preview {
+            background-color: var(--dark-card-bg);
+            border: 1px solid var(--dark-border);
+        }
+        
+        .mode-options {
+            margin: 1rem 0;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .mode-options label {
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.3s, color 0.3s;
+            text-align: center;
+            flex: 1;
+        }
+        
+        .light-mode .mode-options label.light-label {
+            background-color: #f1f1f1;
+            color: #333;
+            border: 2px solid var(--blink-orange);
+        }
+        
+        .light-mode .mode-options label.dark-label {
+            background-color: #ddd;
+            color: #444;
+        }
+        
+        .dark-mode .mode-options label.light-label {
+            background-color: #444;
+            color: #ddd;
+        }
+        
+        .dark-mode .mode-options label.dark-label {
+            background-color: #333;
+            color: #FFF;
+            border: 2px solid var(--blink-orange);
+        }
+        
+        .mode-options input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="light-mode">
+    <div class="theme-switch">
+        <button id="theme-toggle" class="btn btn-sm btn-outline-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon" viewBox="0 0 16 16">
+                <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-8">
+                <div class="text-center mb-4">
+                    <img src="img/blink-light.svg" alt="Blink Logo" class="logo" id="header-logo">
+                    <h1 class="page-title">Blink Pay Button Generator</h1>
+                    <p class="lead">Create a Bitcoin Lightning donation button for your website</p>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h2 class="card-title">Generate Your Donation Button</h2>
+                        <div class="mb-3">
+                            <label for="blinkUsername" class="form-label">Your Blink Username</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="blinkUsername" placeholder="Enter your Blink username">
+                                <button class="btn btn-primary" id="generateBtn">Generate Code</button>
+                            </div>
+                            <div class="form-text">Enter your Blink username without the @ symbol</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="result-container" style="display: none;">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h2 class="card-title">Customize Your Button</h2>
+                            
+                            <label class="form-label d-block">Widget Theme</label>
+                            <div class="mode-options">
+                                <label class="light-label">
+                                    <input type="radio" name="widget-theme" value="light" checked>
+                                    Light Mode
+                                </label>
+                                <label class="dark-label">
+                                    <input type="radio" name="widget-theme" value="dark">
+                                    Dark Mode
+                                </label>
+                            </div>
+
+                            <div class="mt-4">
+                                <label for="currencyInput" class="form-label">Supported Currencies</label>
+                                <p class="form-text mb-3">Enter currency codes separated by commas (e.g., USD, EUR, GBP). Bitcoin sats are always included.</p>
+                                
+                                <div class="mb-3">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="currencyInput" 
+                                           placeholder="USD, EUR, GBP, JPY, CAD, AUD"
+                                           value="USD">
+                                    <div class="form-text">
+                                        <div id="currencyValidation" class="mt-2"></div>
+                                        <details class="mt-2">
+                                            <summary style="cursor: pointer; color: var(--blink-orange);">
+                                                <small>View popular currencies</small>
+                                            </summary>
+                                            <div class="mt-2">
+                                                <small>
+                                                    <strong>Major:</strong> USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY<br>
+                                                    <strong>Regional:</strong> ZAR, BRL, MXN, INR, KRW, SGD, THB, PHP<br>
+                                                    <strong>African:</strong> NGN, KES, GHS, UGX, TZS, RWF, ETB<br>
+                                                    <strong>Others:</strong> NOK, SEK, DKK, PLN, CZK, HUF, TRY, ILS, AED, SAR
+                                                </small>
+                                            </div>
+                                        </details>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h2 class="card-title">Your Donation Button Code</h2>
+                            <p>Copy and paste this code into your website HTML:</p>
+                            
+                            <div class="code-container">
+                                <button class="btn btn-sm btn-outline-secondary copy-btn" id="copyBtn">
+                                    Copy
+                                </button>
+                                <pre><code id="generatedCode"></code></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h2 class="card-title">Preview</h2>
+                            <div id="widget-preview" class="text-center">
+                                <!-- Preview of the widget will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/generator.js"></script>
+</body>
+</html> 

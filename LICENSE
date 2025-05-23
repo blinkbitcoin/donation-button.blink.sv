@@ -1,0 +1,54 @@
+GNU AFFERO GENERAL PUBLIC LICENSE
+Version 3, 19 November 2007
+
+Copyright (C) 2025 Blink Pay Button Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Additional permission under GNU AGPL version 3 section 7:
+
+If you modify this Program, or any covered work, by linking or combining
+it with other code, such resulting work need not be licensed under the
+GNU AGPL, provided that you comply with the terms of this License for
+the modified Program or covered work.
+
+The full license text is available at: https://www.gnu.org/licenses/agpl-3.0.txt
+
+================================================================================
+
+                       SUMMARY OF AGPL-3.0 LICENSE
+
+This is a strong copyleft license that:
+
+✅ ALLOWS:
+- Commercial use
+- Modification  
+- Distribution
+- Private use
+
+❗ REQUIRES:
+- Source code disclosure (including for network/SaaS use)
+- License and copyright notice
+- State changes made to the code
+- Same license for derivative works
+
+🚫 DOES NOT PROVIDE:
+- Warranty
+- Liability protection
+
+KEY DIFFERENCE FROM GPL: If you run a modified version of this software 
+on a server and make it available to users over a network, you MUST make 
+the complete source code of your modified version available under AGPL-3.0.
+
+================================================================================ 

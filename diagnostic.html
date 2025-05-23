@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink API Diagnostic Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem;
+            background-color: #f8f9fa;
+        }
+        .console {
+            background-color: #000;
+            color: #fff;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 8px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .console pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log {
+            margin-bottom: 4px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #333;
+        }
+        .log-time {
+            color: #999;
+        }
+        .log-info {
+            color: #7bcdff;
+        }
+        .log-success {
+            color: #5cb85c;
+        }
+        .log-error {
+            color: #d9534f;
+        }
+        .log-warning {
+            color: #f0ad4e;
+        }
+        .log-data {
+            color: #888;
+            padding-left: 20px;
+            font-size: 0.9em;
+        }
+        .actions {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">Blink API Diagnostic Tool</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                WebSocket Connection Test
+            </div>
+            <div class="card-body">
+                <p>Test WebSocket connection to the Blink API:</p>
+                
+                <div class="actions">
+                    <button id="testWsBtn" class="btn btn-primary">Test WebSocket Connection</button>
+                    <button id="clearConsoleBtn" class="btn btn-secondary ms-2">Clear Console</button>
+                </div>
+                
+                <div class="console" id="logConsole"></div>
+                
+                <div class="mb-3">
+                    <label for="paymentRequestInput" class="form-label">Payment Request to Monitor</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="paymentRequestInput" placeholder="lnbc...">
+                        <button class="btn btn-primary" id="monitorBtn">Monitor Payment Status</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                GraphQL Query Tester
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="queryInput" class="form-label">GraphQL Query</label>
+                    <textarea class="form-control" id="queryInput" rows="5">query Query($username: Username!) {
+  accountDefaultWallet(username: $username) {
+    id
+  }
+}</textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="variablesInput" class="form-label">Variables (JSON)</label>
+                    <textarea class="form-control" id="variablesInput" rows="3">{
+  "username": "pretyflaco"
+}</textarea>
+                </div>
+                
+                <button id="executeQueryBtn" class="btn btn-primary">Execute Query</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const consoleEl = document.getElementById('logConsole');
+            const testWsBtn = document.getElementById('testWsBtn');
+            const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+            const monitorBtn = document.getElementById('monitorBtn');
+            const paymentRequestInput = document.getElementById('paymentRequestInput');
+            const queryInput = document.getElementById('queryInput');
+            const variablesInput = document.getElementById('variablesInput');
+            const executeQueryBtn = document.getElementById('executeQueryBtn');
+            
+            let activeWebSocket = null;
+            
+            // Log message to console
+            function log(message, type = 'info', data = null) {
+                const logEl = document.createElement('div');
+                logEl.className = 'log';
+                
+                const now = new Date();
+                const timeStr = `${now.toISOString().slice(11, 23)}`;
+                
+                let html = `<span class="log-time">[${timeStr}]</span> <span class="log-${type}">${message}</span>`;
+                
+                if (data) {
+                    let dataStr = typeof data === 'object' ? JSON.stringify(data, null, 2) : data.toString();
+                    html += `<pre class="log-data">${dataStr}</pre>`;
+                }
+                
+                logEl.innerHTML = html;
+                consoleEl.appendChild(logEl);
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+            }
+            
+            // Clear console
+            function clearConsole() {
+                consoleEl.innerHTML = '';
+            }
+            
+            // Test WebSocket connection
+            function testWebSocketConnection() {
+                try {
+                    log('Testing WebSocket connection to wss://ws.blink.sv/graphql...');
+                    
+                    // Close any existing WebSocket
+                    if (activeWebSocket && activeWebSocket.readyState === WebSocket.OPEN) {
+                        activeWebSocket.close();
+                    }
+                    
+                    const ws = new WebSocket('wss://ws.blink.sv/graphql', 'graphql-transport-ws');
+                    activeWebSocket = ws;
+                    
+                    ws.onopen = () => {
+                        log('WebSocket connection established successfully!', 'success');
+                        log(`WebSocket readyState: ${ws.readyState} (OPEN)`, 'info');
+                        
+                        // Send connection initialization message
+                        const initMsg = {
+                            type: 'connection_init',
+                            payload: {}
+                        };
+                        log('Sending connection initialization message', 'info', initMsg);
+                        ws.send(JSON.stringify(initMsg));
+                    };
+                    
+                    ws.onmessage = (event) => {
+                        log('Received WebSocket message', 'info', event.data);
+                        
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.type === 'connection_ack') {
+                                log('Connection acknowledged by server!', 'success');
+                                log('WebSocket connection is ready for subscriptions', 'info');
+                            }
+                        } catch (error) {
+                            log(`Error parsing message: ${error.message}`, 'error');
+                        }
+                    };
+                    
+                    ws.onerror = (error) => {
+                        log(`WebSocket error: ${error.message || 'Unknown error'}`, 'error', error);
+                    };
+                    
+                    ws.onclose = (event) => {
+                        log(`WebSocket connection closed: Code: ${event.code}, Reason: ${event.reason || 'None provided'}`, 
+                            event.code === 1000 ? 'info' : 'warning');
+                    };
+                } catch (error) {
+                    log(`Error creating WebSocket: ${error.message}`, 'error');
+                }
+            }
+            
+            // Monitor payment status for a payment request
+            function monitorPaymentStatus(paymentRequest) {
+                if (!paymentRequest) {
+                    log('Please enter a valid payment request', 'error');
+                    return;
+                }
+                
+                try {
+                    log(`Starting payment monitoring for: ${paymentRequest.substring(0, 20)}...`, 'info');
+                    
+                    // Close any existing WebSocket
+                    if (activeWebSocket && activeWebSocket.readyState === WebSocket.OPEN) {
+                        activeWebSocket.close();
+                    }
+                    
+                    const ws = new WebSocket('wss://ws.blink.sv/graphql', 'graphql-transport-ws');
+                    activeWebSocket = ws;
+                    
+                    ws.onopen = () => {
+                        log('WebSocket connection established', 'success');
+                        
+                        // Send connection initialization message
+                        const initMsg = {
+                            type: 'connection_init',
+                            payload: {}
+                        };
+                        log('Sending connection initialization message', 'info', initMsg);
+                        ws.send(JSON.stringify(initMsg));
+                    };
+                    
+                    ws.onmessage = (event) => {
+                        log('Received WebSocket message', 'info', event.data);
+                        
+                        try {
+                            const data = JSON.parse(event.data);
+                            
+                            // If connection is acknowledged, send subscription
+                            if (data.type === 'connection_ack') {
+                                log('Connection acknowledged, sending subscription request', 'success');
+                                
+                                const subscriptionMsg = {
+                                    id: '1',
+                                    type: 'subscribe',
+                                    payload: {
+                                        query: `
+                                            subscription LnInvoicePaymentStatusByPaymentRequest($input: LnInvoicePaymentStatusByPaymentRequestInput!) {
+                                                lnInvoicePaymentStatusByPaymentRequest(input: $input) {
+                                                    paymentRequest
+                                                    status
+                                                }
+                                            }
+                                        `,
+                                        variables: {
+                                            input: {
+                                                paymentRequest: paymentRequest
+                                            }
+                                        }
+                                    }
+                                };
+                                
+                                log('Subscription message', 'info', subscriptionMsg);
+                                ws.send(JSON.stringify(subscriptionMsg));
+                            }
+                            
+                            // Handle subscription data
+                            if (data.type === 'data' && data.payload && data.payload.data) {
+                                const paymentStatus = data.payload.data.lnInvoicePaymentStatusByPaymentRequest;
+                                
+                                if (paymentStatus) {
+                                    log(`Payment status: ${paymentStatus.status}`, 
+                                        paymentStatus.status === 'PAID' ? 'success' : 'info',
+                                        paymentStatus);
+                                    
+                                    if (paymentStatus.status === 'PAID') {
+                                        log('Payment confirmed! 🎉', 'success');
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            log(`Error processing message: ${error.message}`, 'error');
+                        }
+                    };
+                    
+                    ws.onerror = (error) => {
+                        log(`WebSocket error: ${error.message || 'Unknown error'}`, 'error', error);
+                    };
+                    
+                    ws.onclose = (event) => {
+                        log(`WebSocket connection closed: Code: ${event.code}, Reason: ${event.reason || 'None provided'}`, 
+                            event.code === 1000 ? 'info' : 'warning');
+                    };
+                } catch (error) {
+                    log(`Error: ${error.message}`, 'error');
+                }
+            }
+            
+            // Execute GraphQL query
+            async function executeQuery() {
+                try {
+                    const query = queryInput.value.trim();
+                    const variablesStr = variablesInput.value.trim();
+                    
+                    if (!query) {
+                        log('Please enter a GraphQL query', 'error');
+                        return;
+                    }
+                    
+                    let variables = {};
+                    if (variablesStr) {
+                        try {
+                            variables = JSON.parse(variablesStr);
+                        } catch (error) {
+                            log(`Invalid JSON in variables: ${error.message}`, 'error');
+                            return;
+                        }
+                    }
+                    
+                    log('Executing GraphQL query', 'info', { query, variables });
+                    
+                    const response = await fetch('https://api.blink.sv/graphql', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            query,
+                            variables
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    log('Received API response', 'success', data);
+                    
+                } catch (error) {
+                    log(`API error: ${error.message}`, 'error');
+                }
+            }
+            
+            // Event listeners
+            testWsBtn.addEventListener('click', testWebSocketConnection);
+            clearConsoleBtn.addEventListener('click', clearConsole);
+            monitorBtn.addEventListener('click', () => monitorPaymentStatus(paymentRequestInput.value.trim()));
+            executeQueryBtn.addEventListener('click', executeQuery);
+            
+            // Initial log
+            log('Diagnostic tool ready. Click "Test WebSocket Connection" to start.', 'info');
+        });
+    </script>
+</body>
+</html> 
