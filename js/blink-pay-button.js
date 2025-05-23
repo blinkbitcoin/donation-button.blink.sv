@@ -1,6 +1,7 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
+ * Version: 1.1.1 - Multi-language with bug fixes
  */
 (function() {
     // Translation objects for multi-language support
@@ -593,73 +594,89 @@
         
         // Handle the donation process
         handleDonate: async function() {
-            this.log('Donate button clicked');
-            
-            const amountInput = document.getElementById('blink-pay-amount');
-            const amount = parseFloat(amountInput.value);
-            
-            if (isNaN(amount) || amount <= 0) {
-                this.showStatus('error', this.t('pleaseEnterValidAmount'));
-                return;
-            }
-            
-            // Convert to sats if necessary and validate minimum
-            let amountInSats;
-            if (this.selectedCurrency === 'sats') {
-                amountInSats = amount;
-                if (amountInSats < this.minAmount) {
-                    this.showStatus('error', `${this.t('amountMustBeAtLeast')} ${this.minAmount} sats`);
-                    return;
-                }
-            } else {
-                if (amount < 0.01) {
-                    this.showStatus('error', `${this.t('amountMustBeAtLeast')} 0.01 ${this.selectedCurrency.toUpperCase()}`);
-                    return;
-                }
-                
-                let exchangeRate = this.exchangeRates[this.selectedCurrency];
-                if (!exchangeRate) {
-                    // If we don't have the exchange rate, try to fetch it
-                    try {
-                        await this.fetchExchangeRate(this.selectedCurrency);
-                        exchangeRate = this.exchangeRates[this.selectedCurrency];
-                    } catch (error) {
-                        return; // Error already shown in fetchExchangeRate
-                    }
-                }
-                
-                amountInSats = Math.round(amount * exchangeRate);
-            }
-            
-            // Clear any previous status messages and start loading
-            this.showStatus('', '');
-            this.setButtonLoading(true);
-            
             try {
-                this.log(`Processing donation: ${amount} ${this.selectedCurrency} (${amountInSats} sats)`);
+                this.log('Donate button clicked');
                 
-                // Step 1: Get wallet ID
-                const walletId = await this.getAccountDefaultWalletId(this.username);
-                if (!walletId) {
-                    throw new Error('Could not retrieve wallet ID for this username');
+                const amountInput = document.getElementById('blink-pay-amount');
+                const amount = parseFloat(amountInput.value);
+                
+                if (isNaN(amount) || amount <= 0) {
+                    this.showStatus('error', this.t('pleaseEnterValidAmount'));
+                    return;
                 }
-                this.log(`Retrieved wallet ID: ${walletId}`);
                 
-                // Step 2: Create invoice
-                const paymentRequest = await this.createInvoice(walletId, amountInSats);
-                if (!paymentRequest) {
-                    throw new Error('Could not create invoice');
+                // Convert to sats if necessary and validate minimum
+                let amountInSats;
+                if (this.selectedCurrency === 'sats') {
+                    amountInSats = amount;
+                    if (amountInSats < this.minAmount) {
+                        this.showStatus('error', `${this.t('amountMustBeAtLeast')} ${this.minAmount} sats`);
+                        return;
+                    }
+                } else {
+                    if (amount < 0.01) {
+                        this.showStatus('error', `${this.t('amountMustBeAtLeast')} 0.01 ${this.selectedCurrency.toUpperCase()}`);
+                        return;
+                    }
+                    
+                    let exchangeRate = this.exchangeRates[this.selectedCurrency];
+                    if (!exchangeRate) {
+                        // If we don't have the exchange rate, try to fetch it
+                        try {
+                            await this.fetchExchangeRate(this.selectedCurrency);
+                            exchangeRate = this.exchangeRates[this.selectedCurrency];
+                        } catch (error) {
+                            return; // Error already shown in fetchExchangeRate
+                        }
+                    }
+                    
+                    amountInSats = Math.round(amount * exchangeRate);
                 }
-                this.log(`Created invoice`, { paymentRequest: paymentRequest.substring(0, 30) + '...' });
                 
-                // Step 3: Show QR code and set up payment monitoring
-                this.displayInvoice(paymentRequest);
-                this.subscribeToPaymentStatus(paymentRequest);
+                // Clear any previous status messages and start loading
+                this.showStatus('', '');
+                this.setButtonLoading(true);
                 
-            } catch (error) {
-                this.log(`Error in donation process: ${error.message}`, error);
-                console.error('Blink Pay Button Error:', error);
-                this.showStatus('error', error.message || this.t('anErrorOccurred'));
+                try {
+                    this.log(`Processing donation: ${amount} ${this.selectedCurrency} (${amountInSats} sats)`);
+                    
+                    // Step 1: Get wallet ID
+                    this.log('About to call getAccountDefaultWalletId');
+                    if (typeof this.getAccountDefaultWalletId !== 'function') {
+                        throw new Error('getAccountDefaultWalletId is not a function - this context may be lost');
+                    }
+                    const walletId = await this.getAccountDefaultWalletId(this.username);
+                    if (!walletId) {
+                        throw new Error('Could not retrieve wallet ID for this username');
+                    }
+                    this.log(`Retrieved wallet ID: ${walletId}`);
+                    
+                    // Step 2: Create invoice
+                    this.log('About to call createInvoice');
+                    if (typeof this.createInvoice !== 'function') {
+                        throw new Error('createInvoice is not a function - this context may be lost');
+                    }
+                    const paymentRequest = await this.createInvoice(walletId, amountInSats);
+                    if (!paymentRequest) {
+                        throw new Error('Could not create invoice');
+                    }
+                    this.log(`Created invoice`, { paymentRequest: paymentRequest.substring(0, 30) + '...' });
+                    
+                    // Step 3: Show QR code and set up payment monitoring
+                    this.displayInvoice(paymentRequest);
+                    this.subscribeToPaymentStatus(paymentRequest);
+                    
+                } catch (error) {
+                    this.log(`Error in donation process: ${error.message}`, error);
+                    console.error('Blink Pay Button Error:', error);
+                    this.showStatus('error', error.message || this.t('anErrorOccurred'));
+                    this.setButtonLoading(false);
+                }
+            } catch (topLevelError) {
+                console.error('Top-level error in handleDonate:', topLevelError);
+                console.error('Error stack:', topLevelError.stack);
+                console.error('Widget context:', this);
+                this.showStatus('error', `Debug error: ${topLevelError.message}`);
                 this.setButtonLoading(false);
             }
         },
