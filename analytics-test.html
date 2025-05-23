@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics URL Test - Blink Pay Button</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #FB5607;
+            margin-bottom: 20px;
+        }
+        .analytics-demo {
+            border: 2px solid #FB5607;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background: #fff9f6;
+        }
+        .url-display {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+        .param-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #FB5607;
+        }
+        button {
+            background: #FB5607;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #e54e06;
+        }
+        .widget-container {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Analytics URL Test</h1>
+        
+        <p>This page demonstrates the analytics tracking feature of the Blink Pay Button widget. When users click the Blink logo in the widget, they are redirected to Blink's signup page with analytics parameters.</p>
+
+        <div class="analytics-demo">
+            <h3>📊 Generated Analytics URL</h3>
+            <p>Click the button below to generate an analytics URL based on this page:</p>
+            
+            <button onclick="generateAnalyticsUrl()">Generate Analytics URL</button>
+            <button onclick="openAnalyticsUrl()" id="openBtn" style="display: none;">Open URL in New Tab</button>
+            
+            <div id="urlDisplay" class="url-display" style="display: none;"></div>
+            
+            <div id="paramDetails" class="param-list" style="display: none;">
+                <h4>📋 URL Parameters Breakdown:</h4>
+                <div id="paramList"></div>
+            </div>
+        </div>
+
+        <div class="widget-container">
+            <h3>🔗 Live Widget Demo</h3>
+            <p>Below is a live widget where you can test the analytics tracking by clicking the Blink logo:</p>
+            <div id="blink-pay-button-container"></div>
+        </div>
+
+        <div class="analytics-demo">
+            <h3>ℹ️ What Gets Tracked</h3>
+            <ul>
+                <li><strong>Username:</strong> The Blink username configured in the widget</li>
+                <li><strong>Referral Source:</strong> Always "embedded_donation_button"</li>
+                <li><strong>Embed URL:</strong> The current page URL where the widget is embedded</li>
+                <li><strong>Widget Version:</strong> Version of the widget code for feature tracking</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        let generatedUrl = '';
+
+        function generateAnalyticsUrl() {
+            // Create a widget instance to test analytics URL generation
+            const testWidget = Object.create(BlinkPayButton);
+            testWidget.username = 'twentyone';
+            testWidget.log = function() {}; // Mock log function
+            
+            generatedUrl = testWidget.buildBlinkAnalyticsUrl();
+            
+            // Display the URL
+            const urlDisplay = document.getElementById('urlDisplay');
+            urlDisplay.textContent = generatedUrl;
+            urlDisplay.style.display = 'block';
+            
+            // Show open button
+            document.getElementById('openBtn').style.display = 'inline-block';
+            
+            // Parse and display parameters
+            const url = new URL(generatedUrl);
+            const params = url.searchParams;
+            
+            const paramList = document.getElementById('paramList');
+            paramList.innerHTML = '';
+            
+            for (let [key, value] of params) {
+                const paramDiv = document.createElement('div');
+                paramDiv.innerHTML = `<strong>${key}:</strong> ${decodeURIComponent(value)}`;
+                paramDiv.style.marginBottom = '8px';
+                paramList.appendChild(paramDiv);
+            }
+            
+            document.getElementById('paramDetails').style.display = 'block';
+        }
+
+        function openAnalyticsUrl() {
+            if (generatedUrl) {
+                window.open(generatedUrl, '_blank');
+            }
+        }
+
+        // Initialize the live widget demo
+        document.addEventListener('DOMContentLoaded', () => {
+            BlinkPayButton.init({
+                username: 'twentyone',
+                containerId: 'blink-pay-button-container',
+                themeMode: 'light',
+                defaultAmount: 1000,
+                supportedCurrencies: [
+                    { code: 'sats', name: 'sats', isCrypto: true },
+                    { code: 'USD', name: 'USD', isCrypto: false }
+                ],
+                debug: true
+            });
+        });
+    </script>
+</body>
+</html> 
