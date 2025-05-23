@@ -39,7 +39,35 @@ document.addEventListener('DOMContentLoaded', function() {
         { code: 'zh', name: '中文' },
         { code: 'ru', name: 'Русский' },
         { code: 'ar', name: 'العربية' },
-        { code: 'tr', name: 'Türkçe' }
+        { code: 'tr', name: 'Türkçe' },
+        // European Languages
+        { code: 'nl', name: 'Nederlands' },
+        { code: 'da', name: 'Dansk' },
+        { code: 'sv', name: 'Svenska' },
+        { code: 'el', name: 'Ελληνικά' },
+        { code: 'ro', name: 'Română' },
+        { code: 'hu', name: 'Magyar' },
+        { code: 'hr', name: 'Hrvatski' },
+        { code: 'sr', name: 'Српски' },
+        { code: 'bs', name: 'Bosanski' },
+        { code: 'cs', name: 'Čeština' },
+        { code: 'pl', name: 'Polski' },
+        { code: 'lt', name: 'Lietuvių' },
+        { code: 'fi', name: 'Suomi' },
+        { code: 'sq', name: 'Shqip' },
+        // African Languages
+        { code: 'sw', name: 'Kiswahili' },
+        { code: 'af', name: 'Afrikaans' },
+        { code: 'xh', name: 'isiXhosa' },
+        { code: 'zu', name: 'isiZulu' },
+        // Asian Languages
+        { code: 'id', name: 'Bahasa Indonesia' },
+        { code: 'th', name: 'ไทย' },
+        { code: 'vi', name: 'Tiếng Việt' },
+        { code: 'hi', name: 'हिन्दी' },
+        { code: 'bn', name: 'বাংলা' },
+        { code: 'fa', name: 'فارسی' },
+        { code: 'ps', name: 'پښتو' }
     ];
     
     // Toggle site theme between light and dark

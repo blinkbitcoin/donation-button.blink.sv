@@ -1,22 +1,64 @@
 # Multi-Language Support for Blink Pay Button
 
-The Blink Pay Button widget now supports multiple languages, allowing you to localize the user interface text for your audience.
+The Blink Pay Button widget now supports **35+ languages**, making Bitcoin Lightning donations accessible to users worldwide, with particular focus on Global South countries.
 
 ## Supported Languages
 
 The widget currently supports the following languages:
 
+### Major International Languages
 - **English** (`en`) - Default
-- **Spanish** (`es`) - Español
+- **Spanish** (`es`) - Español  
 - **French** (`fr`) - Français
-- **German** (`de`) - Deutsch
 - **Portuguese** (`pt`) - Português
-- **Italian** (`it`) - Italiano
-- **Japanese** (`ja`) - 日本語
-- **Chinese** (`zh`) - 中文
 - **Russian** (`ru`) - Русский
 - **Arabic** (`ar`) - العربية
+- **Chinese** (`zh`) - 中文
+- **Japanese** (`ja`) - 日本語
+
+### European Languages
+- **German** (`de`) - Deutsch
+- **Italian** (`it`) - Italiano
+- **Dutch** (`nl`) - Nederlands
+- **Danish** (`da`) - Dansk
+- **Swedish** (`sv`) - Svenska
+- **Greek** (`el`) - Ελληνικά
+- **Romanian** (`ro`) - Română
+- **Hungarian** (`hu`) - Magyar
+- **Croatian** (`hr`) - Hrvatski
+- **Serbian** (`sr`) - Српски
+- **Bosnian** (`bs`) - Bosanski
+- **Czech** (`cs`) - Čeština
+- **Polish** (`pl`) - Polski
+- **Lithuanian** (`lt`) - Lietuvių
+- **Finnish** (`fi`) - Suomi
+- **Albanian** (`sq`) - Shqip
 - **Turkish** (`tr`) - Türkçe
+
+### African Languages
+- **Swahili** (`sw`) - Kiswahili
+- **Afrikaans** (`af`) - Afrikaans
+- **Xhosa** (`xh`) - isiXhosa
+- **Zulu** (`zu`) - isiZulu
+
+### Asian Languages
+- **Indonesian** (`id`) - Bahasa Indonesia
+- **Thai** (`th`) - ไทย
+- **Vietnamese** (`vi`) - Tiếng Việt
+- **Hindi** (`hi`) - हिन्दी
+- **Bengali** (`bn`) - বাংলা
+- **Persian/Farsi** (`fa`) - فارسی
+- **Pashto** (`ps`) - پښتو
+
+## Global South Focus
+
+This language expansion specifically targets Global South regions where Bitcoin adoption is growing rapidly:
+
+- **Africa**: Swahili, Afrikaans, Xhosa, Zulu
+- **Asia**: Hindi, Bengali, Indonesian, Thai, Vietnamese
+- **Middle East**: Arabic, Persian, Pashto, Turkish
+- **Latin America**: Spanish, Portuguese
+- **Eastern Europe**: Multiple Slavic and regional languages
 
 ## Usage
 
