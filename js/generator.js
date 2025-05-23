@@ -93,6 +93,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Populate language dropdown dynamically
+    function populateLanguageDropdown() {
+        languageSelect.innerHTML = '';
+        availableLanguages.forEach(language => {
+            const option = document.createElement('option');
+            option.value = language.code;
+            option.textContent = language.name;
+            languageSelect.appendChild(option);
+        });
+    }
+    
+    // Initialize language dropdown on page load
+    populateLanguageDropdown();
+    
     // Listen for widget theme changes
     document.querySelectorAll('input[name="widget-theme"]').forEach(radio => {
         radio.addEventListener('change', function() {
