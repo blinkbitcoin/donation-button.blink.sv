@@ -226,12 +226,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear previous preview completely
         widgetPreview.innerHTML = '<div id="blink-pay-button-container"></div>';
         
-        // Force a new widget initialization
-        setTimeout(() => {
-            const currencyConfig = generateCurrencyConfig();
-            
-            // Always initialize a fresh widget instance
-            if (window.BlinkPayButton) {
+        // Check if BlinkPayButton is already loaded
+        if (window.BlinkPayButton) {
+            // Force a new widget initialization with delay
+            setTimeout(() => {
+                const currencyConfig = generateCurrencyConfig();
+                
                 window.BlinkPayButton.init({
                     username: currentUsername,
                     containerId: 'blink-pay-button-container',
@@ -239,10 +239,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     language: selectedLanguage,
                     defaultAmount: 1000,
                     supportedCurrencies: currencyConfig,
-                    debug: true // Enable debug for testing
+                    debug: false
                 });
-            }
-        }, 50); // Small delay to ensure DOM is ready
+            }, 50);
+        } else {
+            // Load the widget script dynamically for the preview
+            const script = document.createElement('script');
+            script.src = 'js/blink-pay-button.js';
+            document.head.appendChild(script);
+            
+            // Initialize the widget once the script is loaded
+            script.onload = function() {
+                setTimeout(() => {
+                    const currencyConfig = generateCurrencyConfig();
+                    
+                    window.BlinkPayButton.init({
+                        username: currentUsername,
+                        containerId: 'blink-pay-button-container',
+                        themeMode: currentWidgetTheme,
+                        language: selectedLanguage,
+                        defaultAmount: 1000,
+                        supportedCurrencies: currencyConfig,
+                        debug: false
+                    });
+                }, 50);
+            };
+        }
     }
     
     // Copy the generated code to clipboard
