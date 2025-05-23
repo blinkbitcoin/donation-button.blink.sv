@@ -12,10 +12,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('theme-toggle');
     const currencyInput = document.getElementById('currencyInput');
     const currencyValidation = document.getElementById('currencyValidation');
+    const languageSelect = document.getElementById('languageSelect');
     
     let currentWidgetTheme = 'light';
     let currentUsername = '';
     let selectedCurrencies = ['USD']; // Default to USD + sats (sats is always included)
+    let selectedLanguage = 'en'; // Default language
     
     // Common currencies that are well-supported by most APIs
     const popularCurrencies = [
@@ -23,6 +25,20 @@ document.addEventListener('DOMContentLoaded', function() {
         'ZAR', 'BRL', 'MXN', 'INR', 'KRW', 'SGD', 'THB', 'PHP',
         'NGN', 'KES', 'GHS', 'UGX', 'TZS', 'RWF', 'ETB',
         'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'ILS', 'AED', 'SAR'
+    ];
+    
+    // Available languages for the widget
+    const availableLanguages = [
+        { code: 'en', name: 'English' },
+        { code: 'es', name: 'Español' },
+        { code: 'fr', name: 'Français' },
+        { code: 'de', name: 'Deutsch' },
+        { code: 'pt', name: 'Português' },
+        { code: 'it', name: 'Italiano' },
+        { code: 'ja', name: '日本語' },
+        { code: 'zh', name: '中文' },
+        { code: 'ru', name: 'Русский' },
+        { code: 'ar', name: 'العربية' }
     ];
     
     // Toggle site theme between light and dark
@@ -61,6 +77,13 @@ document.addEventListener('DOMContentLoaded', function() {
     currencyInput.addEventListener('input', function() {
         updateSelectedCurrencies();
         validateCurrencies();
+        updateWidgetPreview();
+        updateGeneratedCode();
+    });
+    
+    // Listen for language selection changes
+    languageSelect.addEventListener('change', function() {
+        selectedLanguage = this.value;
         updateWidgetPreview();
         updateGeneratedCode();
     });
@@ -173,8 +196,8 @@ document.addEventListener('DOMContentLoaded', function() {
       BlinkPayButton.init({
         username: '${currentUsername}',
         containerId: 'blink-pay-button-container',
-        buttonText: 'Donate Bitcoin',
         themeMode: '${currentWidgetTheme}',
+        language: '${selectedLanguage}',
         defaultAmount: 1000,
         supportedCurrencies: ${currencyConfigString},
         debug: false
@@ -208,8 +231,8 @@ document.addEventListener('DOMContentLoaded', function() {
             window.BlinkPayButton.init({
                 username: currentUsername,
                 containerId: 'blink-pay-button-container',
-                buttonText: 'Donate Bitcoin',
                 themeMode: currentWidgetTheme,
+                language: selectedLanguage,
                 defaultAmount: 1000,
                 supportedCurrencies: currencyConfig,
                 debug: false
@@ -226,8 +249,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.BlinkPayButton.init({
                     username: currentUsername,
                     containerId: 'blink-pay-button-container',
-                    buttonText: 'Donate Bitcoin',
                     themeMode: currentWidgetTheme,
+                    language: selectedLanguage,
                     defaultAmount: 1000,
                     supportedCurrencies: currencyConfig,
                     debug: false

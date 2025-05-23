@@ -3,13 +3,168 @@
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
  */
 (function() {
+    // Translation objects for multi-language support
+    const translations = {
+        en: {
+            buttonText: 'Donate Bitcoin',
+            copyInvoice: 'Copy Invoice',
+            copied: 'Copied!',
+            paymentSuccessful: 'Payment Successful. Thank you for donating.',
+            loading: 'Loading...',
+            invoiceCopied: 'Invoice copied to clipboard',
+            failedToCopy: 'Failed to copy invoice',
+            pleaseEnterValidAmount: 'Please enter a valid amount',
+            amountMustBeAtLeast: 'Amount must be at least',
+            failedToFetchExchangeRate: 'Failed to fetch exchange rate for',
+            pleaseTryAgain: 'Please try again.',
+            anErrorOccurred: 'An error occurred while processing your donation',
+            qrCodeAlt: 'Lightning Invoice QR Code'
+        },
+        es: {
+            buttonText: 'Donar Bitcoin',
+            copyInvoice: 'Copiar Factura',
+            copied: '¡Copiado!',
+            paymentSuccessful: 'Pago Exitoso. Gracias por donar.',
+            loading: 'Cargando...',
+            invoiceCopied: 'Factura copiada al portapapeles',
+            failedToCopy: 'Error al copiar la factura',
+            pleaseEnterValidAmount: 'Por favor ingrese una cantidad válida',
+            amountMustBeAtLeast: 'La cantidad debe ser al menos',
+            failedToFetchExchangeRate: 'Error al obtener el tipo de cambio para',
+            pleaseTryAgain: 'Por favor intente de nuevo.',
+            anErrorOccurred: 'Ocurrió un error al procesar su donación',
+            qrCodeAlt: 'Código QR de Factura Lightning'
+        },
+        fr: {
+            buttonText: 'Faire un Don Bitcoin',
+            copyInvoice: 'Copier la Facture',
+            copied: 'Copié !',
+            paymentSuccessful: 'Paiement Réussi. Merci pour votre don.',
+            loading: 'Chargement...',
+            invoiceCopied: 'Facture copiée dans le presse-papiers',
+            failedToCopy: 'Échec de la copie de la facture',
+            pleaseEnterValidAmount: 'Veuillez entrer un montant valide',
+            amountMustBeAtLeast: 'Le montant doit être au moins',
+            failedToFetchExchangeRate: 'Échec de récupération du taux de change pour',
+            pleaseTryAgain: 'Veuillez réessayer.',
+            anErrorOccurred: 'Une erreur s\'est produite lors du traitement de votre don',
+            qrCodeAlt: 'Code QR de Facture Lightning'
+        },
+        de: {
+            buttonText: 'Bitcoin Spenden',
+            copyInvoice: 'Rechnung Kopieren',
+            copied: 'Kopiert!',
+            paymentSuccessful: 'Zahlung Erfolgreich. Vielen Dank für Ihre Spende.',
+            loading: 'Lädt...',
+            invoiceCopied: 'Rechnung in die Zwischenablage kopiert',
+            failedToCopy: 'Fehler beim Kopieren der Rechnung',
+            pleaseEnterValidAmount: 'Bitte geben Sie einen gültigen Betrag ein',
+            amountMustBeAtLeast: 'Der Betrag muss mindestens',
+            failedToFetchExchangeRate: 'Fehler beim Abrufen des Wechselkurses für',
+            pleaseTryAgain: 'Bitte versuchen Sie es erneut.',
+            anErrorOccurred: 'Bei der Verarbeitung Ihrer Spende ist ein Fehler aufgetreten',
+            qrCodeAlt: 'Lightning Rechnung QR-Code'
+        },
+        pt: {
+            buttonText: 'Doar Bitcoin',
+            copyInvoice: 'Copiar Fatura',
+            copied: 'Copiado!',
+            paymentSuccessful: 'Pagamento Bem-sucedido. Obrigado por doar.',
+            loading: 'Carregando...',
+            invoiceCopied: 'Fatura copiada para a área de transferência',
+            failedToCopy: 'Falha ao copiar a fatura',
+            pleaseEnterValidAmount: 'Por favor, insira um valor válido',
+            amountMustBeAtLeast: 'O valor deve ser pelo menos',
+            failedToFetchExchangeRate: 'Falha ao buscar taxa de câmbio para',
+            pleaseTryAgain: 'Por favor, tente novamente.',
+            anErrorOccurred: 'Ocorreu um erro ao processar sua doação',
+            qrCodeAlt: 'Código QR da Fatura Lightning'
+        },
+        it: {
+            buttonText: 'Dona Bitcoin',
+            copyInvoice: 'Copia Fattura',
+            copied: 'Copiato!',
+            paymentSuccessful: 'Pagamento Riuscito. Grazie per aver donato.',
+            loading: 'Caricamento...',
+            invoiceCopied: 'Fattura copiata negli appunti',
+            failedToCopy: 'Impossibile copiare la fattura',
+            pleaseEnterValidAmount: 'Per favore inserisci un importo valido',
+            amountMustBeAtLeast: 'L\'importo deve essere almeno',
+            failedToFetchExchangeRate: 'Impossibile recuperare il tasso di cambio per',
+            pleaseTryAgain: 'Per favore riprova.',
+            anErrorOccurred: 'Si è verificato un errore durante l\'elaborazione della tua donazione',
+            qrCodeAlt: 'Codice QR Fattura Lightning'
+        },
+        ja: {
+            buttonText: 'ビットコインを寄付',
+            copyInvoice: '請求書をコピー',
+            copied: 'コピーしました！',
+            paymentSuccessful: '決済成功。ご寄付ありがとうございます。',
+            loading: '読み込み中...',
+            invoiceCopied: '請求書をクリップボードにコピーしました',
+            failedToCopy: '請求書のコピーに失敗しました',
+            pleaseEnterValidAmount: '有効な金額を入力してください',
+            amountMustBeAtLeast: '金額は最低',
+            failedToFetchExchangeRate: '為替レートの取得に失敗しました',
+            pleaseTryAgain: '再度お試しください。',
+            anErrorOccurred: '寄付の処理中にエラーが発生しました',
+            qrCodeAlt: 'Lightning請求書QRコード'
+        },
+        zh: {
+            buttonText: '捐赠比特币',
+            copyInvoice: '复制发票',
+            copied: '已复制！',
+            paymentSuccessful: '支付成功。感谢您的捐赠。',
+            loading: '加载中...',
+            invoiceCopied: '发票已复制到剪贴板',
+            failedToCopy: '复制发票失败',
+            pleaseEnterValidAmount: '请输入有效金额',
+            amountMustBeAtLeast: '金额必须至少为',
+            failedToFetchExchangeRate: '获取汇率失败',
+            pleaseTryAgain: '请再试一次。',
+            anErrorOccurred: '处理您的捐赠时发生错误',
+            qrCodeAlt: 'Lightning发票二维码'
+        },
+        ru: {
+            buttonText: 'Пожертвовать Биткоин',
+            copyInvoice: 'Копировать Счёт',
+            copied: 'Скопировано!',
+            paymentSuccessful: 'Платёж Успешен. Спасибо за пожертвование.',
+            loading: 'Загрузка...',
+            invoiceCopied: 'Счёт скопирован в буфер обмена',
+            failedToCopy: 'Не удалось скопировать счёт',
+            pleaseEnterValidAmount: 'Пожалуйста, введите корректную сумму',
+            amountMustBeAtLeast: 'Сумма должна быть не менее',
+            failedToFetchExchangeRate: 'Не удалось получить курс валют для',
+            pleaseTryAgain: 'Пожалуйста, попробуйте снова.',
+            anErrorOccurred: 'Произошла ошибка при обработке вашего пожертвования',
+            qrCodeAlt: 'QR-код Lightning счёта'
+        },
+        ar: {
+            buttonText: 'تبرع بالبيتكوين',
+            copyInvoice: 'نسخ الفاتورة',
+            copied: 'تم النسخ!',
+            paymentSuccessful: 'تم الدفع بنجاح. شكراً لك على التبرع.',
+            loading: 'جاري التحميل...',
+            invoiceCopied: 'تم نسخ الفاتورة إلى الحافظة',
+            failedToCopy: 'فشل في نسخ الفاتورة',
+            pleaseEnterValidAmount: 'يرجى إدخال مبلغ صالح',
+            amountMustBeAtLeast: 'يجب أن يكون المبلغ على الأقل',
+            failedToFetchExchangeRate: 'فشل في جلب سعر الصرف لـ',
+            pleaseTryAgain: 'يرجى المحاولة مرة أخرى.',
+            anErrorOccurred: 'حدث خطأ أثناء معالجة تبرعك',
+            qrCodeAlt: 'رمز QR لفاتورة Lightning'
+        }
+    };
+
     // Widget configuration
     const BlinkPayButton = {
         // Initialize the widget with the given username and container
         init: function(config) {
             this.username = config.username || '';
             this.containerId = config.containerId || 'blink-pay-button-container';
-            this.buttonText = config.buttonText || 'Donate Bitcoin';
+            this.language = config.language || 'en';
+            this.buttonText = config.buttonText || this.t('buttonText');
             this.buttonClass = config.buttonClass || 'blink-pay-button';
             this.themeMode = config.themeMode || 'light'; // light or dark
             this.themeColor = config.themeColor || '#FB5607'; // Sunset Orange as default
@@ -40,6 +195,19 @@
             this.render();
             this.attachEventListeners();
             this.log('Widget initialized for username: ' + this.username);
+        },
+        
+        // Translation helper function
+        t: function(key, params = {}) {
+            const lang = translations[this.language] || translations['en'];
+            let text = lang[key] || translations['en'][key] || key;
+            
+            // Simple parameter substitution
+            Object.keys(params).forEach(param => {
+                text = text.replace(`{${param}}`, params[param]);
+            });
+            
+            return text;
         },
         
         // Add a log entry
@@ -351,27 +519,26 @@
             }
         },
         
-        // Fetch exchange rate for any currency from Blink API
-        fetchExchangeRate: async function(currency) {
-            const currencyCode = currency.toUpperCase();
-            
-            const query = `
-                query Query($currency: DisplayCurrency) {
-                    realtimePrice(currency: $currency) {
-                        btcSatPrice {
-                            base
-                            offset
-                        }
-                    }
-                }
-            `;
-            
-            const variables = {
-                currency: currencyCode
-            };
+        // Fetch exchange rate for a specific currency
+        fetchExchangeRate: async function(currencyCode) {
+            this.log(`Fetching exchange rate for ${currencyCode}`);
             
             try {
-                this.log(`Fetching exchange rate for ${currencyCode} from Blink API`);
+                const query = `
+                    query realtimePrice($currency: DisplayCurrency!) {
+                        realtimePrice(currency: $currency) {
+                            btcSatPrice {
+                                base
+                                offset
+                            }
+                        }
+                    }
+                `;
+                
+                const variables = {
+                    currency: currencyCode.toUpperCase()
+                };
+                
                 const response = await fetch('https://api.blink.sv/graphql', {
                     method: 'POST',
                     headers: {
@@ -384,28 +551,25 @@
                 });
                 
                 const data = await response.json();
-                this.log(`Exchange rate API response for ${currencyCode}`, data);
+                this.log(`Exchange rate response for ${currencyCode}`, data);
                 
                 if (data.errors) {
                     throw new Error(data.errors[0].message || `Error fetching exchange rate for ${currencyCode}`);
                 }
                 
-                const priceData = data.data.realtimePrice.btcSatPrice;
-                // Calculate: base / 10^offset = price of 1 sat in cents, so divide by 100 for currency units
-                const satPriceInCents = priceData.base / Math.pow(10, priceData.offset);
-                const satPriceInCurrency = satPriceInCents / 100;
-                // Exchange rate: currency to sats (1 currency unit = X sats)
-                const exchangeRate = 1 / satPriceInCurrency;
+                const btcSatPrice = data.data.realtimePrice.btcSatPrice;
+                const exchangeRate = btcSatPrice.base * Math.pow(10, btcSatPrice.offset);
                 
-                // Cache the exchange rate
-                this.exchangeRates[currency.toLowerCase()] = exchangeRate;
+                // Cache the rate
+                this.exchangeRates[currencyCode] = exchangeRate;
+                this.log(`Exchange rate for ${currencyCode}: ${exchangeRate} sats per unit`);
                 
-                this.log(`Exchange rate calculated: 1 ${currencyCode} = ${exchangeRate.toFixed(2)} sats`);
+                return exchangeRate;
                 
             } catch (error) {
                 this.log(`Error fetching exchange rate for ${currencyCode}: ${error.message}`, error);
                 console.error('Error fetching exchange rate:', error);
-                this.showStatus('error', `Failed to fetch exchange rate for ${currencyCode}. Please try again.`);
+                this.showStatus('error', `${this.t('failedToFetchExchangeRate')} ${currencyCode}. ${this.t('pleaseTryAgain')}`);
                 throw error;
             }
         },
@@ -427,77 +591,64 @@
             return satsAmount;
         },
         
-        // Handle the donate button click
-        handleDonate: async function() {
-            const amountInput = document.getElementById('blink-pay-amount');
-            const inputAmount = parseFloat(amountInput.value);
+        // Handle the donation process
+        handleDonate: async function(event) {
+            event.preventDefault();
+            this.log('Donate button clicked');
             
-            // Validate input
-            if (isNaN(inputAmount) || inputAmount <= 0) {
-                this.showStatus('error', 'Please enter a valid amount');
+            const amountInput = document.getElementById('blink-pay-amount');
+            const amount = parseFloat(amountInput.value);
+            
+            if (isNaN(amount) || amount <= 0) {
+                this.showStatus('error', this.t('pleaseEnterValidAmount'));
                 return;
             }
             
-            // Check minimum amount based on currency
-            const currency = this.supportedCurrencies.find(c => c.code.toLowerCase() === this.selectedCurrency);
-            if (currency && currency.isCrypto) {
-                if (inputAmount < this.minAmount) {
-                    this.showStatus('error', `Amount must be at least ${this.minAmount} sats`);
+            // Convert to sats if necessary and validate minimum
+            let amountInSats;
+            if (this.selectedCurrency === 'sats') {
+                amountInSats = amount;
+                if (amountInSats < this.minAmount) {
+                    this.showStatus('error', `${this.t('amountMustBeAtLeast')} ${this.minAmount} sats`);
                     return;
                 }
             } else {
-                if (inputAmount < 0.01) {
-                    this.showStatus('error', `Amount must be at least 0.01 ${this.selectedCurrency.toUpperCase()}`);
+                if (amount < 0.01) {
+                    this.showStatus('error', `${this.t('amountMustBeAtLeast')} 0.01 ${this.selectedCurrency.toUpperCase()}`);
                     return;
                 }
+                
+                let exchangeRate = this.exchangeRates[this.selectedCurrency];
+                if (!exchangeRate) {
+                    throw new Error(`Exchange rate not available for ${this.selectedCurrency.toUpperCase()}`);
+                }
+                
+                amountInSats = Math.round(amount * exchangeRate);
             }
             
+            // Clear any previous status messages and start loading
             this.showStatus('', '');
             this.setButtonLoading(true);
             
             try {
-                // Convert to sats if needed
-                let amountInSats;
-                if (this.selectedCurrency === 'sats') {
-                    amountInSats = Math.round(inputAmount);
-                } else {
-                    // Ensure we have exchange rate for fiat currencies
-                    if (!this.exchangeRates[this.selectedCurrency]) {
-                        this.log(`Exchange rate for ${this.selectedCurrency.toUpperCase()} not available, fetching...`);
-                        await this.fetchExchangeRate(this.selectedCurrency);
-                    }
-                    amountInSats = this.convertToSats(inputAmount);
-                }
+                this.log(`Processing donation: ${amount} ${this.selectedCurrency} (${amountInSats} sats)`);
                 
-                this.log(`Starting donation process for ${inputAmount} ${this.selectedCurrency.toUpperCase()} (${amountInSats} sats)`);
+                // Step 1: Get wallet ID
+                const walletId = await this.getWalletId();
+                this.log(`Retrieved wallet ID: ${walletId}`);
                 
-                // Step 1: Get the account default wallet ID
-                this.log(`Getting wallet ID for username: ${this.username}`);
-                const walletId = await this.getAccountDefaultWalletId(this.username);
-                if (!walletId) {
-                    throw new Error('Could not retrieve wallet ID for this username');
-                }
-                this.log(`Received wallet ID: ${walletId}`);
+                // Step 2: Create invoice
+                const invoiceData = await this.createInvoice(walletId, amountInSats);
+                this.log(`Created invoice`, invoiceData);
                 
-                // Step 2: Create an invoice
-                this.log(`Creating invoice for ${amountInSats} sats to wallet ${walletId}`);
-                const invoice = await this.createInvoice(walletId, amountInSats);
-                if (!invoice) {
-                    throw new Error('Could not create invoice');
-                }
-                this.log(`Invoice created successfully`, { paymentRequest: invoice.substring(0, 30) + '...' });
-                
-                // Step 3: Display the payment request and QR code
-                this.displayInvoice(invoice);
-                
-                // Step 4: Subscribe to payment status updates
-                this.log(`Setting up payment status monitoring`);
-                this.subscribeToPaymentStatus(invoice);
+                // Step 3: Show QR code and set up payment monitoring
+                this.showQRCode(invoiceData.paymentRequest);
+                this.subscribeToPaymentStatus(invoiceData.paymentRequest);
                 
             } catch (error) {
                 this.log(`Error in donation process: ${error.message}`, error);
                 console.error('Blink Pay Button Error:', error);
-                this.showStatus('error', error.message || 'An error occurred while processing your donation');
+                this.showStatus('error', error.message || this.t('anErrorOccurred'));
                 this.setButtonLoading(false);
             }
         },
@@ -612,14 +763,14 @@
             
             const qrImage = document.createElement('img');
             qrImage.src = qrUrl;
-            qrImage.alt = 'Lightning Invoice QR Code';
+            qrImage.alt = this.t('qrCodeAlt');
             qrContainer.innerHTML = '';
             qrContainer.appendChild(qrImage);
             qrContainer.style.display = 'flex';
             
             // Update the button for copy to clipboard functionality
             const donateButton = document.getElementById('blink-pay-button');
-            donateButton.textContent = 'Copy Invoice';
+            donateButton.textContent = this.t('copyInvoice');
             
             // Remove all existing event listeners by cloning and replacing the button
             const newButton = donateButton.cloneNode(true);
@@ -628,17 +779,17 @@
             // Add new event listener for copying the invoice
             newButton.addEventListener('click', () => {
                 navigator.clipboard.writeText(paymentRequest).then(() => {
-                    this.showStatus('success', 'Invoice copied to clipboard');
+                    this.showStatus('success', this.t('invoiceCopied'));
                     
                     // Change button text temporarily to show success
-                    newButton.textContent = 'Copied!';
+                    newButton.textContent = this.t('copied');
                     setTimeout(() => {
-                        newButton.textContent = 'Copy Invoice';
+                        newButton.textContent = this.t('copyInvoice');
                     }, 1500);
                     
                 }).catch(err => {
                     console.error('Could not copy invoice: ', err);
-                    this.showStatus('error', 'Failed to copy invoice');
+                    this.showStatus('error', this.t('failedToCopy'));
                 });
             });
             
@@ -826,7 +977,7 @@
             const donateButton = document.getElementById('blink-pay-button');
             
             // Update button text and style
-            donateButton.textContent = 'Payment Successful. Thank you for donating.';
+            donateButton.textContent = this.t('paymentSuccessful');
             donateButton.classList.add('success');
             
             // Clear status as the message is now in the button
@@ -840,7 +991,7 @@
             newButton.addEventListener('click', () => {
                 // Reset the widget back to initial state
                 successContainer.style.display = 'none';
-                newButton.textContent = this.buttonText;
+                newButton.textContent = this.t('buttonText');
                 newButton.classList.remove('success');
                 
                 // Show input field again
@@ -862,7 +1013,7 @@
         setButtonLoading: function(isLoading) {
             const button = document.getElementById('blink-pay-button');
             if (isLoading) {
-                button.innerHTML = '<span class="blink-pay-spinner"></span> Loading...';
+                button.innerHTML = `<span class="blink-pay-spinner"></span> ${this.t('loading')}`;
                 button.disabled = true;
             } else {
                 button.disabled = false;

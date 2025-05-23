@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Language Widget Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .widget-test {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #FB5607;
+            margin-bottom: 10px;
+        }
+        .language-buttons {
+            margin: 20px 0;
+        }
+        .language-buttons button {
+            margin: 5px;
+            padding: 8px 16px;
+            border: 2px solid #FB5607;
+            background: white;
+            color: #FB5607;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .language-buttons button:hover,
+        .language-buttons button.active {
+            background: #FB5607;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Blink Pay Button - Multi-Language Test</h1>
+        
+        <div class="language-buttons">
+            <button onclick="changeLanguage('en')" class="active" id="btn-en">English</button>
+            <button onclick="changeLanguage('es')" id="btn-es">Español</button>
+            <button onclick="changeLanguage('fr')" id="btn-fr">Français</button>
+            <button onclick="changeLanguage('de')" id="btn-de">Deutsch</button>
+            <button onclick="changeLanguage('pt')" id="btn-pt">Português</button>
+            <button onclick="changeLanguage('it')" id="btn-it">Italiano</button>
+            <button onclick="changeLanguage('ja')" id="btn-ja">日本語</button>
+            <button onclick="changeLanguage('zh')" id="btn-zh">中文</button>
+            <button onclick="changeLanguage('ru')" id="btn-ru">Русский</button>
+            <button onclick="changeLanguage('ar')" id="btn-ar">العربية</button>
+        </div>
+
+        <div class="widget-test">
+            <h2>Light Theme Widget</h2>
+            <div id="blink-pay-button-container-light"></div>
+        </div>
+
+        <div class="widget-test" style="background: #333; color: white;">
+            <h2>Dark Theme Widget</h2>
+            <div id="blink-pay-button-container-dark"></div>
+        </div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        let currentLanguage = 'en';
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            
+            // Update active button
+            document.querySelectorAll('.language-buttons button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn-${lang}`).classList.add('active');
+            
+            // Reinitialize widgets with new language
+            initializeWidgets();
+        }
+
+        function initializeWidgets() {
+            // Clear containers
+            document.getElementById('blink-pay-button-container-light').innerHTML = '';
+            document.getElementById('blink-pay-button-container-dark').innerHTML = '';
+
+            // Initialize light theme widget
+            setTimeout(() => {
+                BlinkPayButton.init({
+                    username: 'twentyone', // Replace with actual test username
+                    containerId: 'blink-pay-button-container-light',
+                    themeMode: 'light',
+                    language: currentLanguage,
+                    defaultAmount: 1000,
+                    supportedCurrencies: [
+                        { code: 'sats', name: 'sats', isCrypto: true },
+                        { code: 'USD', name: 'USD', isCrypto: false },
+                        { code: 'EUR', name: 'EUR', isCrypto: false }
+                    ],
+                    debug: true
+                });
+            }, 100);
+
+            // Initialize dark theme widget
+            setTimeout(() => {
+                BlinkPayButton.init({
+                    username: 'twentyone', // Replace with actual test username
+                    containerId: 'blink-pay-button-container-dark',
+                    themeMode: 'dark',
+                    language: currentLanguage,
+                    defaultAmount: 1000,
+                    supportedCurrencies: [
+                        { code: 'sats', name: 'sats', isCrypto: true },
+                        { code: 'USD', name: 'USD', isCrypto: false },
+                        { code: 'EUR', name: 'EUR', isCrypto: false }
+                    ],
+                    debug: true
+                });
+            }, 200);
+        }
+
+        // Initialize widgets when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeWidgets();
+        });
+    </script>
+</body>
+</html> 
