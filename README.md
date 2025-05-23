@@ -12,6 +12,7 @@ A lightweight, embeddable Bitcoin Lightning donation widget that integrates with
 - **💸 Low Fees**: Leverage Blink's competitive Lightning Network fees
 - **🌐 No Backend Required**: Pure frontend solution, no server needed
 - **📝 Memo Support**: Automatic memo generation with username
+- **📊 Analytics Tracking**: Built-in referral tracking to help Blink understand widget usage
 
 ## 🎯 Live Demo
 
@@ -91,6 +92,18 @@ The widget supports 30+ currencies through Blink's exchange rate API:
 **Regional**: ZAR, BRL, MXN, INR, KRW, SGD, THB, PHP  
 **African**: NGN, KES, GHS, UGX, TZS, RWF, ETB  
 **Others**: NOK, SEK, DKK, PLN, CZK, HUF, TRY, ILS, AED, SAR
+
+## 📊 Analytics Tracking
+
+The widget includes built-in analytics tracking when users click the Blink logo. This helps Blink understand widget usage and track referrals from embedded donation buttons.
+
+**Tracked Information:**
+- Username configured in the widget
+- Source URL where the widget is embedded  
+- Widget version
+- Referral source identifier
+
+**Privacy:** Only publicly available information is tracked. Website owners can modify or remove analytics if desired. See [ANALYTICS-README.md](ANALYTICS-README.md) for full details.
 
 ## 🎨 Styling
 

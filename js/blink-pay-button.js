@@ -838,11 +838,14 @@
                 `<option value="${currency.code.toLowerCase()}">${currency.name}</option>`
             ).join('');
             
+            // Build analytics tracking URL for Blink logo
+            const analyticsUrl = this.buildBlinkAnalyticsUrl();
+            
             const html = `
                 <div class="blink-pay-widget">
                     <!-- Top third -->
                     <div class="blink-pay-header">
-                        <a href="https://get.blink.sv" target="_blank" rel="noopener noreferrer">
+                        <a href="${analyticsUrl}" target="_blank" rel="noopener noreferrer">
                             <img src="${logo}" alt="Blink" class="blink-pay-logo">
                         </a>
                         <div class="blink-pay-username">${this.username}</div>
@@ -1535,6 +1538,34 @@
             setTimeout(() => {
                 this.adjustButtonFontSize(button, text);
             }, 10);
+        },
+        
+        // Build analytics tracking URL for Blink logo
+        buildBlinkAnalyticsUrl: function() {
+            const baseUrl = 'https://get.blink.sv';
+            const params = new URLSearchParams();
+            
+            // Add username parameter
+            if (this.username) {
+                params.append('username', this.username);
+            }
+            
+            // Add referral source
+            params.append('referral', 'embedded_donation_button');
+            
+            // Add the current page URL where the widget is embedded
+            try {
+                const currentUrl = window.location.href;
+                params.append('embed_url', currentUrl);
+            } catch (e) {
+                // Fallback if window.location is not available
+                this.log('Could not get current URL for analytics', e);
+            }
+            
+            // Add widget version for tracking
+            params.append('widget_version', '1.2.2');
+            
+            return `${baseUrl}?${params.toString()}`;
         }
     };
     

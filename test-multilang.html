@@ -100,6 +100,15 @@
             <h2>Dark Theme Widget</h2>
             <div id="blink-pay-button-container-dark"></div>
         </div>
+
+        <div class="widget-test">
+            <h2>Analytics URL Test</h2>
+            <p>Click the button below to test the analytics URL generation:</p>
+            <button onclick="testAnalyticsUrl()" style="padding: 10px 20px; background: #FB5607; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                Test Analytics URL
+            </button>
+            <div id="analytics-result" style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 6px; font-family: monospace; word-break: break-all; display: none;"></div>
+        </div>
     </div>
 
     <script src="js/blink-pay-button.js"></script>
@@ -157,6 +166,26 @@
                     debug: true
                 });
             }, 200);
+        }
+
+        // Test analytics URL generation
+        function testAnalyticsUrl() {
+            // Create a temporary widget instance to test the analytics URL
+            const testWidget = Object.create(BlinkPayButton);
+            testWidget.username = 'twentyone';
+            testWidget.log = function() {}; // Mock log function
+            
+            const analyticsUrl = testWidget.buildBlinkAnalyticsUrl();
+            
+            const resultDiv = document.getElementById('analytics-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <strong>Generated Analytics URL:</strong><br>
+                <a href="${analyticsUrl}" target="_blank" style="color: #FB5607;">${analyticsUrl}</a>
+                <br><br>
+                <strong>URL Parameters:</strong><br>
+                ${new URLSearchParams(analyticsUrl.split('?')[1]).toString().split('&').join('<br>')}
+            `;
         }
 
         // Initialize widgets when page loads
