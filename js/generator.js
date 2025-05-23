@@ -223,30 +223,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update the widget preview with current settings
     function updateWidgetPreview() {
-        // Clear previous preview
+        // Clear previous preview completely
         widgetPreview.innerHTML = '<div id="blink-pay-button-container"></div>';
         
-        // Check if BlinkPayButton is already loaded
-        if (window.BlinkPayButton) {
+        // Force a new widget initialization
+        setTimeout(() => {
             const currencyConfig = generateCurrencyConfig();
-            window.BlinkPayButton.init({
-                username: currentUsername,
-                containerId: 'blink-pay-button-container',
-                themeMode: currentWidgetTheme,
-                language: selectedLanguage,
-                defaultAmount: 1000,
-                supportedCurrencies: currencyConfig,
-                debug: false
-            });
-        } else {
-            // Load the widget script dynamically for the preview
-            const script = document.createElement('script');
-            script.src = 'js/blink-pay-button.js';
-            document.head.appendChild(script);
             
-            // Initialize the widget once the script is loaded
-            script.onload = function() {
-                const currencyConfig = generateCurrencyConfig();
+            // Always initialize a fresh widget instance
+            if (window.BlinkPayButton) {
                 window.BlinkPayButton.init({
                     username: currentUsername,
                     containerId: 'blink-pay-button-container',
@@ -254,10 +239,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     language: selectedLanguage,
                     defaultAmount: 1000,
                     supportedCurrencies: currencyConfig,
-                    debug: false
+                    debug: true // Enable debug for testing
                 });
-            };
-        }
+            }
+        }, 50); // Small delay to ensure DOM is ready
     }
     
     // Copy the generated code to clipboard

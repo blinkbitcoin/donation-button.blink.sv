@@ -1,7 +1,7 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.2.0 - Added Turkish language and dynamic font sizing
+ * Version: 1.2.1 - Fixed dynamic font sizing and language switching
  */
 (function() {
     // Translation objects for multi-language support
@@ -393,7 +393,7 @@
                     border: none;
                     border-radius: 8px;
                     cursor: pointer;
-                    font-size: clamp(12px, 2.5vw, 16px);
+                    font-size: 16px;
                     font-weight: 600;
                     text-align: center;
                     transition: all 0.2s;
@@ -402,10 +402,13 @@
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    height: 44px;
+                    max-height: 44px;
                     min-height: 44px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    box-sizing: border-box;
                 }
                 .${this.buttonClass}.success {
                     background: #00a700;
@@ -497,6 +500,14 @@
             
             // Set HTML content
             this.container.innerHTML = html;
+            
+            // Apply font sizing to the initial button text
+            setTimeout(() => {
+                const initialButton = document.getElementById('blink-pay-button');
+                if (initialButton) {
+                    this.adjustButtonFontSize(initialButton, this.buttonText);
+                }
+            }, 10);
         },
         
         // Attach event listeners
@@ -1104,39 +1115,48 @@
         adjustButtonFontSize: function(button, text) {
             if (!button || !text) return;
             
-            // Reset to default first
-            button.style.fontSize = '';
+            // Create a temporary span to measure text width
+            const tempSpan = document.createElement('span');
+            tempSpan.style.visibility = 'hidden';
+            tempSpan.style.position = 'absolute';
+            tempSpan.style.whiteSpace = 'nowrap';
+            tempSpan.style.fontFamily = button.style.fontFamily || 'IBM Plex Sans';
+            tempSpan.style.fontWeight = button.style.fontWeight || '600';
+            tempSpan.textContent = text;
+            document.body.appendChild(tempSpan);
             
-            const textLength = text.length;
-            let fontSize;
+            // Get button's available width (subtract padding)
+            const buttonWidth = button.clientWidth - 24; // 12px padding on each side
             
-            // Adjust font size based on text length
-            if (textLength <= 15) {
-                fontSize = '16px'; // Normal size for short text
-            } else if (textLength <= 25) {
-                fontSize = '14px'; // Slightly smaller for medium text
-            } else if (textLength <= 35) {
-                fontSize = '12px'; // Smaller for long text
-            } else {
-                fontSize = '11px'; // Very small for very long text
+            // Start with maximum font size and reduce until it fits
+            let fontSize = 16;
+            tempSpan.style.fontSize = fontSize + 'px';
+            
+            // Reduce font size until text fits
+            while (tempSpan.offsetWidth > buttonWidth && fontSize > 8) {
+                fontSize -= 0.5;
+                tempSpan.style.fontSize = fontSize + 'px';
             }
             
-            button.style.fontSize = fontSize;
+            // Apply the calculated font size
+            button.style.fontSize = fontSize + 'px';
             
-            // Double-check if text still overflows and reduce further if needed
-            setTimeout(() => {
-                if (button.scrollWidth > button.clientWidth) {
-                    const currentSize = parseInt(button.style.fontSize);
-                    button.style.fontSize = Math.max(currentSize - 1, 10) + 'px';
-                }
-            }, 10);
+            // Clean up
+            document.body.removeChild(tempSpan);
+            
+            this.log(`Adjusted font size to ${fontSize}px for text: "${text}"`);
         },
         
         // Update button text with dynamic font sizing
         updateButtonText: function(button, text) {
-            if (!button) return;
+            if (!button || !text) return;
+            
             button.textContent = text;
-            this.adjustButtonFontSize(button, text);
+            
+            // Use a small delay to ensure the button has rendered
+            setTimeout(() => {
+                this.adjustButtonFontSize(button, text);
+            }, 10);
         }
     };
     
