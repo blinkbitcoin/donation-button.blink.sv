@@ -1199,15 +1199,8 @@
             // Hide input field
             amountInput.parentElement.style.display = 'none';
             
-            // Generate basic QR code (no logo for now)
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}`;
-            this.log(`Generating QR code: ${qrUrl}`);
-            
-            const qrImage = document.createElement('img');
-            qrImage.src = qrUrl;
-            qrImage.alt = this.t('qrCodeAlt');
-            qrContainer.innerHTML = '';
-            qrContainer.appendChild(qrImage);
+            // Generate QR code with logo overlay
+            this.generateQRWithLogo(paymentRequest, qrContainer);
             qrContainer.style.display = 'flex';
             
             // Update the button for copy to clipboard functionality
@@ -1245,9 +1238,19 @@
             // Clear container
             container.innerHTML = '';
             
-            // Generate QR code using qrserver.com with maximum error correction
+            // Generate QR code using qrserver.com with high error correction for logo overlay
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}&ecc=H`;
             this.log(`Generating base QR code: ${qrUrl}`);
+            
+            // Create an img element as fallback (in case canvas fails)
+            const fallbackImg = document.createElement('img');
+            fallbackImg.src = qrUrl;
+            fallbackImg.alt = this.t('qrCodeAlt');
+            fallbackImg.style.width = '130px';
+            fallbackImg.style.height = '130px';
+            fallbackImg.style.backgroundColor = 'white';
+            fallbackImg.style.borderRadius = '8px';
+            fallbackImg.style.padding = '8px';
             
             // Create canvas for compositing
             const canvas = document.createElement('canvas');
@@ -1265,44 +1268,54 @@
             qrImage.crossOrigin = 'anonymous';
             
             qrImage.onload = () => {
-                // Draw QR code
+                this.log(`QR code image loaded successfully`);
+                
+                // Draw QR code on canvas
                 ctx.drawImage(qrImage, 0, 0, 130, 130);
                 
-                // Load and draw the correct Blink logo
+                // Load and draw the Blink logo
                 const logoImage = new Image();
                 logoImage.crossOrigin = 'anonymous';
                 
                 logoImage.onload = () => {
-                    // Calculate logo size (8% of QR code for maximum readability)
-                    const logoSize = Math.round(130 * 0.08);
+                    this.log(`Logo image loaded successfully`);
+                    
+                    // Calculate logo size (10% of QR code for good balance)
+                    const logoSize = Math.round(130 * 0.10);
                     const logoX = (130 - logoSize) / 2;
                     const logoY = (130 - logoSize) / 2;
                     
-                    // Draw logo (no additional background needed as blink_qr.svg has its own)
+                    // Draw logo centered on QR code
                     ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
                     
                     this.log(`Successfully generated QR code with Blink logo overlay (${logoSize}px)`);
+                    
+                    // Replace fallback image with canvas
+                    container.removeChild(fallbackImg);
+                    container.appendChild(canvas);
                 };
                 
-                logoImage.onerror = () => {
-                    this.log(`Failed to load logo, showing QR code without logo`);
-                    // Logo failed to load, just show the QR code
+                logoImage.onerror = (error) => {
+                    this.log(`Failed to load logo image:`, error);
+                    this.log(`Logo URL attempted: https://widget.twentyone.ist/img/blink_qr.svg`);
+                    // Keep the fallback QR without logo
                 };
                 
-                // Use the correct blink_qr.svg logo
+                // Use absolute URL for the blink_qr.svg logo
                 logoImage.src = 'https://widget.twentyone.ist/img/blink_qr.svg';
             };
             
-            qrImage.onerror = () => {
-                this.log(`Failed to load QR code image`);
-                // Fallback: show error message
+            qrImage.onerror = (error) => {
+                this.log(`Failed to load QR code image:`, error);
+                // Fallback: show basic error message
                 container.innerHTML = '<p style="color: red; text-align: center;">Failed to generate QR code</p>';
             };
             
-            qrImage.src = qrUrl;
+            // Start by showing fallback image immediately
+            container.appendChild(fallbackImg);
             
-            // Add canvas to container
-            container.appendChild(canvas);
+            // Start loading QR image
+            qrImage.src = qrUrl;
         },
         
         // Subscribe to payment status updates
