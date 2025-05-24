@@ -1199,8 +1199,15 @@
             // Hide input field
             amountInput.parentElement.style.display = 'none';
             
-            // Generate QR code with Blink logo using canvas overlay
-            this.generateQRWithLogo(paymentRequest, qrContainer);
+            // Generate basic QR code (no logo for now)
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}`;
+            this.log(`Generating QR code: ${qrUrl}`);
+            
+            const qrImage = document.createElement('img');
+            qrImage.src = qrUrl;
+            qrImage.alt = this.t('qrCodeAlt');
+            qrContainer.innerHTML = '';
+            qrContainer.appendChild(qrImage);
             qrContainer.style.display = 'flex';
             
             // Update the button for copy to clipboard functionality
