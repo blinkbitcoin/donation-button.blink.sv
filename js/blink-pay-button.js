@@ -1199,16 +1199,8 @@
             // Hide input field
             amountInput.parentElement.style.display = 'none';
             
-            // Generate QR code with Blink logo using QuickChart
-            const logoUrl = encodeURIComponent('https://widget.twentyone.ist/img/blink-light.svg');
-            const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(paymentRequest)}&size=130&centerImageUrl=${logoUrl}&centerImageSizeRatio=0.2&ecLevel=H`;
-            this.log(`Generating QR code with Blink logo: ${qrUrl}`);
-            
-            const qrImage = document.createElement('img');
-            qrImage.src = qrUrl;
-            qrImage.alt = this.t('qrCodeAlt');
-            qrContainer.innerHTML = '';
-            qrContainer.appendChild(qrImage);
+            // Generate QR code with Blink logo using canvas overlay
+            this.generateQRWithLogo(paymentRequest, qrContainer);
             qrContainer.style.display = 'flex';
             
             // Update the button for copy to clipboard functionality
@@ -1237,6 +1229,95 @@
             });
             
             this.setButtonLoading(false);
+        },
+        
+        // Generate QR code with logo overlay using canvas
+        generateQRWithLogo: function(paymentRequest, container) {
+            this.log(`Generating QR code with logo overlay for payment request`);
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            // Generate QR code using qrserver.com with high error correction
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}&ecc=H`;
+            this.log(`Generating base QR code: ${qrUrl}`);
+            
+            // Create canvas for compositing
+            const canvas = document.createElement('canvas');
+            canvas.width = 130;
+            canvas.height = 130;
+            canvas.style.width = '130px';
+            canvas.style.height = '130px';
+            canvas.style.backgroundColor = 'white';
+            canvas.style.borderRadius = '8px';
+            canvas.style.padding = '8px';
+            const ctx = canvas.getContext('2d');
+            
+            // Load QR code image
+            const qrImage = new Image();
+            qrImage.crossOrigin = 'anonymous';
+            
+            qrImage.onload = () => {
+                // Draw QR code
+                ctx.drawImage(qrImage, 0, 0, 130, 130);
+                
+                // Load and draw logo
+                const logoImage = new Image();
+                logoImage.crossOrigin = 'anonymous';
+                
+                logoImage.onload = () => {
+                    // Calculate logo size (15% of QR code for better readability)
+                    const logoSize = Math.round(130 * 0.15);
+                    const logoX = (130 - logoSize) / 2;
+                    const logoY = (130 - logoSize) / 2;
+                    
+                    // Create a white circular background for the logo
+                    const bgRadius = logoSize / 2 + 2;
+                    const centerX = 130 / 2;
+                    const centerY = 130 / 2;
+                    
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, bgRadius, 0, 2 * Math.PI);
+                    ctx.fill();
+                    
+                    // Draw logo
+                    ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
+                    
+                    this.log(`Successfully generated QR code with logo overlay`);
+                };
+                
+                logoImage.onerror = () => {
+                    this.log(`Failed to load logo, showing QR code without logo`);
+                    // Logo failed to load, just show the QR code
+                };
+                
+                // Use a PNG version of the logo for better compatibility
+                logoImage.src = 'data:image/svg+xml;base64,' + btoa(`
+                    <svg viewBox="0 0 233 233" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FEBE13"/>
+                                <stop offset="50%" style="stop-color:#EF8B22"/>
+                                <stop offset="100%" style="stop-color:#F15822"/>
+                            </linearGradient>
+                        </defs>
+                        <circle cx="116.5" cy="116.5" r="110" fill="url(#gradient)"/>
+                        <path d="M141,101.1c-3.4,13.4-23.8,6.5-30.4,4.9l5.9-23.5c6.5,1.6,27.9,4.7,24.5,18.6L141,101.1L141,101.1z M137.4,139c-3.6,14.6-28.2,6.7-36.2,4.7l6.5-25.9C115.6,119.8,141.2,123.8,137.4,139z M164.2,101.3c2.1-14.3-8.8-21.9-23.5-27l4.8-19.3L133.7,52L129,70.8c-3.1-0.8-6.3-1.5-9.4-2.2l4.7-19l-11.8-2.9l-4.8,19.3l-7.5-1.7l-16.3-4.1l-3.1,12.6c0,0,8.1,2,8.6,2.1c2.6,0.5,5.8,3.4,5.5,6.7l-13.2,52.9c-0.7,2.3-3.1,3.5-5.4,2.8l0,0c-0.3-0.1-8.6-2.1-8.6-2.1l-5.8,13.4l15.3,3.8l8.4,2.2l-4.9,19.5l11.8,3l4.8-19.3c3.2,0.9,6.3,1.7,9.4,2.4l-4.8,19.4l11.8,2.9l4.9-19.5c20.1,3.8,35.2,2.3,41.5-15.9c5.1-14.6-0.3-23-10.8-28.5C156.9,116.8,162.6,111.9,164.2,101.3L164.2,101.3z" fill="white"/>
+                    </svg>
+                `);
+            };
+            
+            qrImage.onerror = () => {
+                this.log(`Failed to load QR code image`);
+                // Fallback: show error message
+                container.innerHTML = '<p style="color: red; text-align: center;">Failed to generate QR code</p>';
+            };
+            
+            qrImage.src = qrUrl;
+            
+            // Add canvas to container
+            container.appendChild(canvas);
         },
         
         // Subscribe to payment status updates
