@@ -1199,9 +1199,10 @@
             // Hide input field
             amountInput.parentElement.style.display = 'none';
             
-            // Generate QR code using external service
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}`;
-            this.log(`Generating QR code with URL: ${qrUrl}`);
+            // Generate QR code with Blink logo using QuickChart
+            const logoUrl = encodeURIComponent('https://widget.twentyone.ist/img/blink-light.svg');
+            const qrUrl = `https://quickchart.io/qr?text=${encodeURIComponent(paymentRequest)}&size=130&centerImageUrl=${logoUrl}&centerImageSizeRatio=0.2&ecLevel=H`;
+            this.log(`Generating QR code with Blink logo: ${qrUrl}`);
             
             const qrImage = document.createElement('img');
             qrImage.src = qrUrl;
