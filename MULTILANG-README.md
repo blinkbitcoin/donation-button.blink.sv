@@ -64,7 +64,7 @@ This language expansion specifically targets Global South regions where Bitcoin 
 
 ### Using the Generator
 
-When using the [Blink Pay Button Generator](https://widget.twentyone.ist/), you can now:
+When using the [Blink Pay Button Generator](https://blinkbitcoin.github.io/donation-button.blink.sv/), you can now:
 
 1. Select your preferred language from the "Widget Language" dropdown
 2. The generator will include the language parameter in the generated code

@@ -231,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="blink-pay-button-container"></div>
 
 <!-- Blink Pay Button script -->
-<script src="https://widget.twentyone.ist/js/blink-pay-button.js"></script>
+        <script src="https://blinkbitcoin.github.io/donation-button.blink.sv/js/blink-pay-button.js"></script>
 <script>
   // Initialize widget when script is loaded
   function initBlinkWidget() {

@@ -16,7 +16,7 @@ A lightweight, embeddable Bitcoin Lightning donation widget that integrates with
 
 ## 🎯 Live Demo
 
-**Generator**: [https://widget.twentyone.ist](https://widget.twentyone.ist)
+**Generator**: [https://blinkbitcoin.github.io/donation-button.blink.sv/](https://blinkbitcoin.github.io/donation-button.blink.sv/)
 
 Try the widget generator to create your own donation button in seconds!
 
@@ -24,7 +24,7 @@ Try the widget generator to create your own donation button in seconds!
 
 ### 1. Generate Your Widget
 
-Visit [widget.twentyone.ist](https://widget.twentyone.ist) and:
+Visit [blinkbitcoin.github.io/donation-button.blink.sv](https://blinkbitcoin.github.io/donation-button.blink.sv/) and:
 1. Enter your Blink username
 2. Choose theme (light/dark)
 3. Select supported currencies
@@ -39,7 +39,7 @@ Paste the generated code into your HTML:
 <div id="blink-pay-button-container"></div>
 
 <!-- Blink Pay Button script -->
-<script src="https://widget.twentyone.ist/js/blink-pay-button.js"></script>
+<script src="https://blinkbitcoin.github.io/donation-button.blink.sv/js/blink-pay-button.js"></script>
 <script>
   BlinkPayButton.init({
     username: 'your-blink-username',
@@ -199,12 +199,12 @@ This project is licensed under the GNU Affero General Public License v3.0 (AGPL-
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/pretyflaco/blink-donation-widget/issues)
-- **Documentation**: [Widget Generator](https://widget.twentyone.ist)
+- **Documentation**: [Widget Generator](https://blinkbitcoin.github.io/donation-button.blink.sv/)
 - **Blink Support**: [Blink Developer Docs](https://dev.blink.sv/)
 
 ## 🔗 Links
 
-- **Live Generator**: [widget.twentyone.ist](https://widget.twentyone.ist)
+- **Live Generator**: [blinkbitcoin.github.io/donation-button.blink.sv](https://blinkbitcoin.github.io/donation-button.blink.sv/)
 - **Blink Wallet**: [blink.sv](https://blink.sv/)
 - **Lightning Network**: [lightning.network](https://lightning.network/)
 

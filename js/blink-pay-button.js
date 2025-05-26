@@ -622,9 +622,9 @@
         // Render the widget in the container
         render: function() {
             // Blink logos for both light and dark modes with absolute URLs
-            const blinkLogoLight = 'https://widget.twentyone.ist/img/blink-light.svg';
-            const blinkLogoDark = 'https://widget.twentyone.ist/img/blink-dark.svg';
-            const checkmarkSvg = 'https://widget.twentyone.ist/img/successcheckmark.svg';
+                    const blinkLogoLight = 'https://blinkbitcoin.github.io/donation-button.blink.sv/img/blink-light.svg';
+        const blinkLogoDark = 'https://blinkbitcoin.github.io/donation-button.blink.sv/img/blink-dark.svg';
+        const checkmarkSvg = 'https://blinkbitcoin.github.io/donation-button.blink.sv/img/successcheckmark.svg';
             
             // Define CSS colors based on the Blink brand
             const colors = {
@@ -1304,12 +1304,12 @@
                 
                 logoImage.onerror = (error) => {
                     this.log(`Failed to load logo image:`, error);
-                    this.log(`Logo URL attempted: https://widget.twentyone.ist/img/blink_qr.svg`);
+                    this.log(`Logo URL attempted: https://blinkbitcoin.github.io/donation-button.blink.sv/img/blink_qr.svg`);
                     // Keep the fallback QR without logo
                 };
                 
                 // Use absolute URL for the blink_qr.svg logo
-                logoImage.src = 'https://widget.twentyone.ist/img/blink_qr.svg';
+                logoImage.src = 'https://blinkbitcoin.github.io/donation-button.blink.sv/img/blink_qr.svg';
             };
             
             qrImage.onerror = (error) => {
