@@ -213,8 +213,72 @@ document.addEventListener('DOMContentLoaded', function() {
         return currencies;
     }
 
+    // Check if username exists in Blink
+    async function checkUsernameExists(username) {
+        const query = `
+            query Query($username: Username!) {
+                usernameAvailable(username: $username)
+            }
+        `;
+        
+        const variables = {
+            username: username
+        };
+        
+        try {
+            const response = await fetch('https://api.blink.sv/graphql', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: query,
+                    variables: variables
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.errors) {
+                throw new Error(data.errors[0].message);
+            }
+            
+            // usernameAvailable: true means username does NOT exist
+            // usernameAvailable: false means username DOES exist
+            return !data.data.usernameAvailable;
+            
+        } catch (error) {
+            console.error('Error checking username:', error);
+            // On error, allow generation to proceed (assume username exists)
+            return true;
+        }
+    }
+    
+    // Show username validation feedback
+    function showUsernameValidation(message, isError = false) {
+        // Remove any existing validation message
+        const existingValidation = document.getElementById('username-validation');
+        if (existingValidation) {
+            existingValidation.remove();
+        }
+        
+        // Create validation message element
+        const validationDiv = document.createElement('div');
+        validationDiv.id = 'username-validation';
+        validationDiv.className = `form-text mt-2 ${isError ? 'text-danger' : 'text-success'}`;
+        validationDiv.innerHTML = message;
+        
+        // Insert after the input group
+        const inputGroup = blinkUsernameInput.parentElement;
+        inputGroup.parentElement.insertBefore(validationDiv, inputGroup.nextSibling);
+    }
+    
     // Generate code based on the username
-    function generateCode() {
+    async function generateCode() {
         currentUsername = blinkUsernameInput.value.trim();
         
         if (!currentUsername) {
@@ -222,21 +286,50 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // Update selected currencies
-        updateSelectedCurrencies();
-        validateCurrencies();
+        // Disable generate button and show loading state
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Checking...';
         
-        // Show the result container
-        resultContainer.style.display = 'block';
-        
-        // Update generated code and preview
-        updateGeneratedCode();
-        updateWidgetPreview();
-        
-        // Scroll to the results
-        setTimeout(() => {
-            resultContainer.scrollIntoView({ behavior: 'smooth' });
-        }, 300);
+        try {
+            // Check if username exists
+            const usernameExists = await checkUsernameExists(currentUsername);
+            
+            if (!usernameExists) {
+                // Username doesn't exist - show error and prevent generation
+                showUsernameValidation(
+                    'This Blink username does not exist yet. <a href="https://get.blink.sv" target="_blank" style="color: var(--blink-orange);">Download Blink now</a> and get it for yourself!',
+                    true
+                );
+                return;
+            }
+            
+            // Username exists - show success message
+            showUsernameValidation('✓ Blink username found!', false);
+            
+            // Update selected currencies
+            updateSelectedCurrencies();
+            validateCurrencies();
+            
+            // Show the result container
+            resultContainer.style.display = 'block';
+            
+            // Update generated code and preview
+            updateGeneratedCode();
+            updateWidgetPreview();
+            
+            // Scroll to the results
+            setTimeout(() => {
+                resultContainer.scrollIntoView({ behavior: 'smooth' });
+            }, 300);
+            
+        } catch (error) {
+            console.error('Error during code generation:', error);
+            showUsernameValidation('Error checking username. Please try again.', true);
+        } finally {
+            // Re-enable generate button
+            generateBtn.disabled = false;
+            generateBtn.textContent = 'Generate Code';
+        }
     }
     
     // Update the generated code based on current settings
@@ -352,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event listeners
-    generateBtn.addEventListener('click', generateCode);
+    generateBtn.addEventListener('click', () => generateCode());
     copyBtn.addEventListener('click', copyToClipboard);
     
     // Allow Enter key to trigger generation

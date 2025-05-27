@@ -272,6 +272,36 @@
             position: absolute;
             opacity: 0;
         }
+        
+        /* Username validation styles */
+        #username-validation {
+            margin-top: 8px;
+            font-size: 0.875rem;
+        }
+        
+        #username-validation.text-success {
+            color: #28a745 !important;
+        }
+        
+        #username-validation.text-danger {
+            color: #dc3545 !important;
+        }
+        
+        .dark-mode #username-validation.text-success {
+            color: #5cb85c !important;
+        }
+        
+        .dark-mode #username-validation.text-danger {
+            color: #e74c3c !important;
+        }
+        
+        #username-validation a {
+            text-decoration: underline;
+        }
+        
+        #username-validation a:hover {
+            text-decoration: none;
+        }
     </style>
 </head>
 <body class="light-mode">
