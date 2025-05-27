@@ -859,10 +859,11 @@
                     width: 100% !important;
                     height: 120px !important;
                     justify-content: center !important;
-                    align-items: flex-start !important;
+                    align-items: center !important;
                     padding-top: 5px !important;
                     margin-bottom: 15px !important;
                     box-sizing: border-box !important;
+                    flex-direction: column !important;
                 }
                 .blink-pay-qr.blink-pay-show {
                     display: flex !important;
@@ -1465,10 +1466,11 @@
                 font-size: 11px !important;
                 font-family: 'IBM Plex Sans', sans-serif !important;
                 color: #666666 !important;
-                margin-bottom: 8px !important;
+                margin-bottom: 5px !important;
                 font-weight: 400 !important;
                 opacity: 0.8 !important;
                 line-height: 1.2 !important;
+                flex-shrink: 0 !important;
             `;
             
             // Initialize countdown
