@@ -824,18 +824,19 @@
                     height: 120px !important;
                     justify-content: center !important;
                     align-items: flex-start !important;
-                    padding-top: 10px !important;
+                    padding-top: 5px !important;
+                    margin-bottom: 15px !important;
                     box-sizing: border-box !important;
                 }
                 .blink-pay-qr.blink-pay-show {
                     display: flex !important;
                 }
                 .blink-pay-qr img {
-                    width: 120px !important;
-                    height: 120px !important;
+                    width: 110px !important;
+                    height: 110px !important;
                     background-color: white !important;
                     border-radius: 8px !important;
-                    padding: 6px !important;
+                    padding: 5px !important;
                     box-sizing: border-box !important;
                 }
                 .blink-pay-success {
@@ -844,15 +845,16 @@
                     height: 120px !important;
                     justify-content: center !important;
                     align-items: flex-start !important;
-                    padding-top: 15px !important;
+                    padding-top: 5px !important;
+                    margin-bottom: 15px !important;
                     box-sizing: border-box !important;
                 }
                 .blink-pay-success.blink-pay-show {
                     display: flex !important;
                 }
                 .blink-pay-success img {
-                    width: 90px !important;
-                    height: 90px !important;
+                    width: 80px !important;
+                    height: 80px !important;
                 }
                 
                 /* Bottom third - Button & Footer */
@@ -1412,8 +1414,8 @@
             inputGroup.style.height = '0';
             inputGroup.style.overflow = 'hidden';
             
-            // Generate clean, maximally scannable QR code
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}`;
+            // Generate clean, maximally scannable QR code - keep larger size for better scanning
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentRequest)}`;
             this.log(`Generating clean QR code: ${qrUrl}`);
             
             const qrImage = document.createElement('img');
@@ -1461,25 +1463,25 @@
             container.innerHTML = '';
             
             // Generate QR code using qrserver.com with high error correction for logo overlay
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}&ecc=H`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentRequest)}&ecc=H`;
             this.log(`Generating base QR code: ${qrUrl}`);
             
             // Create an img element as fallback (in case canvas fails)
             const fallbackImg = document.createElement('img');
             fallbackImg.src = qrUrl;
             fallbackImg.alt = this.t('qrCodeAlt');
-            fallbackImg.style.width = '130px';
-            fallbackImg.style.height = '130px';
+            fallbackImg.style.width = '110px';
+            fallbackImg.style.height = '110px';
             fallbackImg.style.backgroundColor = 'white';
             fallbackImg.style.borderRadius = '8px';
-            fallbackImg.style.padding = '8px';
+            fallbackImg.style.padding = '5px';
             
             // Create canvas for compositing
             const canvas = document.createElement('canvas');
-            canvas.width = 130;
-            canvas.height = 130;
-            canvas.style.width = '130px';
-            canvas.style.height = '130px';
+            canvas.width = 110;
+            canvas.height = 110;
+            canvas.style.width = '110px';
+            canvas.style.height = '110px';
             canvas.style.backgroundColor = 'white';
             canvas.style.borderRadius = '8px';
             canvas.style.padding = '8px';
@@ -1493,7 +1495,7 @@
                 this.log(`QR code image loaded successfully`);
                 
                 // Draw QR code on canvas
-                ctx.drawImage(qrImage, 0, 0, 130, 130);
+                ctx.drawImage(qrImage, 0, 0, 110, 110);
                 
                 // Load and draw the Blink logo
                 const logoImage = new Image();
@@ -1503,9 +1505,9 @@
                     this.log(`Logo image loaded successfully`);
                     
                     // Calculate logo size (10% of QR code for good balance)
-                    const logoSize = Math.round(130 * 0.10);
-                    const logoX = (130 - logoSize) / 2;
-                    const logoY = (130 - logoSize) / 2;
+                    const logoSize = Math.round(110 * 0.10);
+                    const logoX = (110 - logoSize) / 2;
+                    const logoY = (110 - logoSize) / 2;
                     
                     // Draw logo centered on QR code
                     ctx.drawImage(logoImage, logoX, logoY, logoSize, logoSize);
