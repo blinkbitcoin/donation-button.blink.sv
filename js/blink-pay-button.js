@@ -9,6 +9,7 @@
         en: {
             buttonText: 'Donate Bitcoin',
             copyInvoice: 'Copy Invoice',
+            payInWallet: 'Pay in wallet',
             copied: 'Copied!',
             paymentSuccessful: 'Payment Successful. Thank you for donating.',
             loading: 'Loading...',
@@ -24,6 +25,7 @@
         es: {
             buttonText: 'Donar Bitcoin',
             copyInvoice: 'Copiar Factura',
+            payInWallet: 'Pagar en billetera',
             copied: '¡Copiado!',
             paymentSuccessful: 'Pago Exitoso. Gracias por donar.',
             loading: 'Cargando...',
@@ -39,6 +41,7 @@
         fr: {
             buttonText: 'Faire un Don Bitcoin',
             copyInvoice: 'Copier la Facture',
+            payInWallet: 'Payer dans le portefeuille',
             copied: 'Copié !',
             paymentSuccessful: 'Paiement Réussi. Merci pour votre don.',
             loading: 'Chargement...',
@@ -54,6 +57,7 @@
         de: {
             buttonText: 'Bitcoin Spenden',
             copyInvoice: 'Rechnung Kopieren',
+            payInWallet: 'In Wallet bezahlen',
             copied: 'Kopiert!',
             paymentSuccessful: 'Zahlung Erfolgreich. Vielen Dank für Ihre Spende.',
             loading: 'Lädt...',
@@ -69,6 +73,7 @@
         pt: {
             buttonText: 'Doar Bitcoin',
             copyInvoice: 'Copiar Fatura',
+            payInWallet: 'Pagar na carteira',
             copied: 'Copiado!',
             paymentSuccessful: 'Pagamento Bem-sucedido. Obrigado por doar.',
             loading: 'Carregando...',
@@ -84,6 +89,7 @@
         it: {
             buttonText: 'Dona Bitcoin',
             copyInvoice: 'Copia Fattura',
+            payInWallet: 'Paga nel portafoglio',
             copied: 'Copiato!',
             paymentSuccessful: 'Pagamento Riuscito. Grazie per aver donato.',
             loading: 'Caricamento...',
@@ -99,6 +105,7 @@
         ja: {
             buttonText: 'ビットコインを寄付',
             copyInvoice: '請求書をコピー',
+            payInWallet: 'ウォレットで支払う',
             copied: 'コピーしました！',
             paymentSuccessful: '決済成功。ご寄付ありがとうございます。',
             loading: '読み込み中...',
@@ -114,6 +121,7 @@
         zh: {
             buttonText: '捐赠比特币',
             copyInvoice: '复制发票',
+            payInWallet: '在钱包中支付',
             copied: '已复制！',
             paymentSuccessful: '支付成功。感谢您的捐赠。',
             loading: '加载中...',
@@ -129,6 +137,7 @@
         ru: {
             buttonText: 'Пожертвовать Биткоин',
             copyInvoice: 'Копировать Счёт',
+            payInWallet: 'Оплатить в кошельке',
             copied: 'Скопировано!',
             paymentSuccessful: 'Платёж Успешен. Спасибо за пожертвование.',
             loading: 'Загрузка...',
@@ -144,6 +153,7 @@
         ar: {
             buttonText: 'تبرع بالبيتكوين',
             copyInvoice: 'نسخ الفاتورة',
+            payInWallet: 'ادفع في المحفظة',
             copied: 'تم النسخ!',
             paymentSuccessful: 'تم الدفع بنجاح. شكراً لك على التبرع.',
             loading: 'جاري التحميل...',
@@ -159,6 +169,7 @@
         tr: {
             buttonText: 'Bitcoin Bağışla',
             copyInvoice: 'Faturayı Kopyala',
+            payInWallet: 'Cüzdanda öde',
             copied: 'Kopyalandı!',
             paymentSuccessful: 'Ödeme Başarılı. Bağışınız için teşekkürler.',
             loading: 'Yükleniyor...',
@@ -175,6 +186,7 @@
         nl: {
             buttonText: 'Doneer Bitcoin',
             copyInvoice: 'Factuur Kopiëren',
+            payInWallet: 'Betaal in wallet',
             copied: 'Gekopieerd!',
             paymentSuccessful: 'Betaling Succesvol. Bedankt voor je donatie.',
             loading: 'Laden...',
@@ -190,6 +202,7 @@
         da: {
             buttonText: 'Doner Bitcoin',
             copyInvoice: 'Kopier Faktura',
+            payInWallet: 'Betal i pung',
             copied: 'Kopieret!',
             paymentSuccessful: 'Betaling Succesfuld. Tak for din donation.',
             loading: 'Indlæser...',
@@ -205,6 +218,7 @@
         sv: {
             buttonText: 'Donera Bitcoin',
             copyInvoice: 'Kopiera Faktura',
+            payInWallet: 'Betala i plånbok',
             copied: 'Kopierad!',
             paymentSuccessful: 'Betalning Lyckades. Tack för din donation.',
             loading: 'Laddar...',
@@ -220,6 +234,7 @@
         el: {
             buttonText: 'Δωρίστε Bitcoin',
             copyInvoice: 'Αντιγραφή Τιμολογίου',
+            payInWallet: 'Πληρωμή σε πορτοφόλι',
             copied: 'Αντιγράφηκε!',
             paymentSuccessful: 'Πληρωμή Επιτυχής. Ευχαριστούμε για τη δωρεά σας.',
             loading: 'Φόρτωση...',
@@ -235,6 +250,7 @@
         ro: {
             buttonText: 'Donează Bitcoin',
             copyInvoice: 'Copiază Factura',
+            payInWallet: 'Plătește în portofel',
             copied: 'Copiat!',
             paymentSuccessful: 'Plată Reușită. Mulțumim pentru donația ta.',
             loading: 'Se încarcă...',
@@ -250,6 +266,7 @@
         hu: {
             buttonText: 'Bitcoin Adományozás',
             copyInvoice: 'Számla Másolása',
+            payInWallet: 'Fizetés tárcában',
             copied: 'Másolva!',
             paymentSuccessful: 'Fizetés Sikeres. Köszönjük az adományát.',
             loading: 'Betöltés...',
@@ -265,6 +282,7 @@
         hr: {
             buttonText: 'Doniraj Bitcoin',
             copyInvoice: 'Kopiraj Račun',
+            payInWallet: 'Plati u novčaniku',
             copied: 'Kopirano!',
             paymentSuccessful: 'Plaćanje Uspješno. Hvala na donaciji.',
             loading: 'Učitavanje...',
@@ -280,6 +298,7 @@
         sr: {
             buttonText: 'Дониraj Bitcoin',
             copyInvoice: 'Копираj Рачун',
+            payInWallet: 'Плати у новчанику',
             copied: 'Копирано!',
             paymentSuccessful: 'Плаћање Успешно. Хвала на донацији.',
             loading: 'Учитавање...',
@@ -295,6 +314,7 @@
         bs: {
             buttonText: 'Doniraj Bitcoin',
             copyInvoice: 'Kopiraj Račun',
+            payInWallet: 'Plati u novčaniku',
             copied: 'Kopirano!',
             paymentSuccessful: 'Plaćanje Uspješno. Hvala na donaciji.',
             loading: 'Učitavanje...',
@@ -310,6 +330,7 @@
         cs: {
             buttonText: 'Darovat Bitcoin',
             copyInvoice: 'Kopírovat Fakturu',
+            payInWallet: 'Platit v peněžence',
             copied: 'Zkopírováno!',
             paymentSuccessful: 'Platba Úspěšná. Děkujeme za váš dar.',
             loading: 'Načítání...',
@@ -325,6 +346,7 @@
         pl: {
             buttonText: 'Przekaż Bitcoin',
             copyInvoice: 'Kopiuj Fakturę',
+            payInWallet: 'Zapłać w portfelu',
             copied: 'Skopiowane!',
             paymentSuccessful: 'Płatność Udana. Dziękujemy za darowiznę.',
             loading: 'Ładowanie...',
@@ -340,6 +362,7 @@
         lt: {
             buttonText: 'Paaukoti Bitcoin',
             copyInvoice: 'Kopijuoti Sąskaitą',
+            payInWallet: 'Mokėti piniginėje',
             copied: 'Nukopijuota!',
             paymentSuccessful: 'Mokėjimas Sėkmingas. Ačiū už auką.',
             loading: 'Kraunasi...',
@@ -355,6 +378,7 @@
         fi: {
             buttonText: 'Lahjoita Bitcoin',
             copyInvoice: 'Kopioi Lasku',
+            payInWallet: 'Maksa lompakossa',
             copied: 'Kopioitu!',
             paymentSuccessful: 'Maksu Onnistui. Kiitos lahjoituksestasi.',
             loading: 'Ladataan...',
@@ -370,6 +394,7 @@
         sq: {
             buttonText: 'Dhuro Bitcoin',
             copyInvoice: 'Kopjo Faturën',
+            payInWallet: 'Paguaj në portofol',
             copied: 'U kopjua!',
             paymentSuccessful: 'Pagesa e Suksesshme. Faleminderit për dhurimin.',
             loading: 'Po ngarkohet...',
@@ -386,6 +411,7 @@
         sw: {
             buttonText: 'Changia Bitcoin',
             copyInvoice: 'Nakili Bili',
+            payInWallet: 'Lipa kwenye pochi',
             copied: 'Imenakiliwa!',
             paymentSuccessful: 'Malipo Yamefanikiwa. Asante kwa mchango wako.',
             loading: 'Inapakia...',
@@ -401,6 +427,7 @@
         af: {
             buttonText: 'Skenk Bitcoin',
             copyInvoice: 'Kopieer Faktuur',
+            payInWallet: 'Betaal in beursie',
             copied: 'Gekopieer!',
             paymentSuccessful: 'Betaling Geslaagd. Dankie vir jou skenking.',
             loading: 'Laai...',
@@ -416,6 +443,7 @@
         xh: {
             buttonText: 'Nikela Bitcoin',
             copyInvoice: 'Khuphela Ityala',
+            payInWallet: 'Hlawula kwisikhwama',
             copied: 'Kukhutshelwe!',
             paymentSuccessful: 'Intlawulo Iphumelele. Enkosi ngomnikelo wakho.',
             loading: 'Kulayishwa...',
@@ -431,6 +459,7 @@
         zu: {
             buttonText: 'Nikela Bitcoin',
             copyInvoice: 'Kopisha I-invoice',
+            payInWallet: 'Khokha ku-wallet',
             copied: 'Kukopishelwe!',
             paymentSuccessful: 'Inkokhelo Iphumelele. Siyabonga ngomnikelo wakho.',
             loading: 'Kulayishwa...',
@@ -447,6 +476,7 @@
         id: {
             buttonText: 'Donasi Bitcoin',
             copyInvoice: 'Salin Invoice',
+            payInWallet: 'Bayar di dompet',
             copied: 'Tersalin!',
             paymentSuccessful: 'Pembayaran Berhasil. Terima kasih atas donasi Anda.',
             loading: 'Memuat...',
@@ -462,6 +492,7 @@
         th: {
             buttonText: 'บริจาค Bitcoin',
             copyInvoice: 'คัดลอกใบแจ้งหนี้',
+            payInWallet: 'จ่ายในกระเป๋าเงิน',
             copied: 'คัดลอกแล้ว!',
             paymentSuccessful: 'การชำระเงินสำเร็จ ขอบคุณสำหรับการบริจาค',
             loading: 'กำลังโหลด...',
@@ -477,6 +508,7 @@
         vi: {
             buttonText: 'Quyên góp Bitcoin',
             copyInvoice: 'Sao chép Hóa đơn',
+            payInWallet: 'Thanh toán trong ví',
             copied: 'Đã sao chép!',
             paymentSuccessful: 'Thanh toán Thành công. Cảm ơn bạn đã quyên góp.',
             loading: 'Đang tải...',
@@ -492,6 +524,7 @@
         hi: {
             buttonText: 'Bitcoin दान करें',
             copyInvoice: 'इनवॉयस कॉपी करें',
+            payInWallet: 'वॉलेट में भुगतान करें',
             copied: 'कॉपी हो गया!',
             paymentSuccessful: 'भुगतान सफल। आपके दान के लिए धन्यवाद।',
             loading: 'लोड हो रहा है...',
@@ -507,6 +540,7 @@
         bn: {
             buttonText: 'Bitcoin দান করুন',
             copyInvoice: 'ইনভয়েস কপি করুন',
+            payInWallet: 'ওয়ালেটে পেমেন্ট করুন',
             copied: 'কপি হয়েছে!',
             paymentSuccessful: 'পেমেন্ট সফল। আপনার দানের জন্য ধন্যবাদ।',
             loading: 'লোড হচ্ছে...',
@@ -522,6 +556,7 @@
         fa: {
             buttonText: 'بیت‌کوین اهدا کنید',
             copyInvoice: 'کپی فاکتور',
+            payInWallet: 'پرداخت در کیف پول',
             copied: 'کپی شد!',
             paymentSuccessful: 'پرداخت موفق. از اهدای شما متشکریم.',
             loading: 'در حال بارگذاری...',
@@ -537,6 +572,7 @@
         ps: {
             buttonText: 'بیټ کوین ورکړه',
             copyInvoice: 'فکتور کاپي کړئ',
+            payInWallet: 'په والټ کې ورکړئ',
             copied: 'کاپي شو!',
             paymentSuccessful: 'تادیه بریالۍ وه. ستاسو د ورکړې لپاره مننه.',
             loading: 'بارېږي...',
@@ -1434,12 +1470,22 @@
                     qrImage.style.opacity = '1';
                 }, 200);
                 
-                // Copy payment request to clipboard
+                // Copy payment request to clipboard and show status message
                 navigator.clipboard.writeText(paymentRequest).then(() => {
                     this.showStatus('success', this.t('invoiceCopied'));
+                    
+                    // Auto-hide the status message after 2 seconds
+                    setTimeout(() => {
+                        this.showStatus('', '');
+                    }, 2000);
                 }).catch(err => {
                     console.error('Could not copy invoice from QR: ', err);
                     this.showStatus('error', this.t('failedToCopy'));
+                    
+                    // Auto-hide error after 3 seconds
+                    setTimeout(() => {
+                        this.showStatus('', '');
+                    }, 3000);
                 });
             });
             
@@ -1449,29 +1495,42 @@
             qrContainer.style.visibility = 'visible';
             qrContainer.style.opacity = '1';
             
-            // Update the button for copy to clipboard functionality
+            // Update the button for lightning deeplink functionality
             const donateButton = document.getElementById('blink-pay-button');
-            this.updateButtonText(donateButton, this.t('copyInvoice'));
+            this.updateButtonText(donateButton, this.t('payInWallet'));
             
             // Remove all existing event listeners by cloning and replacing the button
             const newButton = donateButton.cloneNode(true);
             donateButton.parentNode.replaceChild(newButton, donateButton);
             
-            // Add new event listener for copying the invoice
+            // Add new event listener for opening lightning deeplink
             newButton.addEventListener('click', () => {
-                navigator.clipboard.writeText(paymentRequest).then(() => {
-                    this.showStatus('success', this.t('invoiceCopied'));
-                    
-                    // Change button text temporarily to show success
-                    this.updateButtonText(newButton, this.t('copied'));
-                    setTimeout(() => {
-                        this.updateButtonText(newButton, this.t('copyInvoice'));
-                    }, 1500);
-                    
-                }).catch(err => {
-                    console.error('Could not copy invoice: ', err);
-                    this.showStatus('error', this.t('failedToCopy'));
-                });
+                const lightningUrl = `lightning:${paymentRequest}`;
+                
+                try {
+                    // Try to open the lightning deeplink
+                    window.open(lightningUrl, '_self');
+                    this.log(`Opened lightning deeplink: ${lightningUrl.substring(0, 30)}...`);
+                } catch (err) {
+                    console.error('Could not open lightning deeplink: ', err);
+                    // Fallback: copy to clipboard if deeplink fails
+                    navigator.clipboard.writeText(paymentRequest).then(() => {
+                        this.showStatus('success', this.t('invoiceCopied'));
+                        
+                        // Auto-hide the status message after 2 seconds
+                        setTimeout(() => {
+                            this.showStatus('', '');
+                        }, 2000);
+                    }).catch(copyErr => {
+                        console.error('Could not copy invoice as fallback: ', copyErr);
+                        this.showStatus('error', this.t('failedToCopy'));
+                        
+                        // Auto-hide error after 3 seconds
+                        setTimeout(() => {
+                            this.showStatus('', '');
+                        }, 3000);
+                    });
+                }
             });
             
             this.setButtonLoading(false);
