@@ -979,7 +979,9 @@
                 const btcSatPrice = data.data.realtimePrice.btcSatPrice;
                 const usdCentPrice = data.data.realtimePrice.usdCentPrice;
                 
-                // Calculate rates: price of 1 sat and 1 USD cent in the given currency
+                // Calculate rates based on API response
+                // btcSatPrice: price of 1 sat in the queried currency  
+                // usdCentPrice: price of 1 USD cent in the queried currency
                 const satPriceInCurrency = btcSatPrice.base / Math.pow(10, btcSatPrice.offset);
                 const usdCentPriceInCurrency = usdCentPrice.base / Math.pow(10, usdCentPrice.offset);
                 
@@ -1016,9 +1018,11 @@
                 throw new Error(`Exchange rate not available for ${fromCurrency.toUpperCase()}`);
             }
             
-            // To convert from currency to sats: amount / price_of_1_sat_in_currency
-            const satsAmount = Math.round(amount / exchangeRates.satPriceInCurrency);
-            this.log(`Converting ${amount} ${fromCurrency.toUpperCase()} to ${satsAmount} sats (1 sat = ${exchangeRates.satPriceInCurrency} ${fromCurrency.toUpperCase()})`);
+            // The API returns price of 1 sat in minor units of the currency
+            // Convert major currency units to minor units, then to sats
+            const amountInMinorUnits = amount * 100; // Convert to cents/minor units
+            const satsAmount = Math.round(amountInMinorUnits / exchangeRates.satPriceInCurrency);
+            this.log(`Converting ${amount} ${fromCurrency.toUpperCase()} to ${satsAmount} sats (1 sat = ${exchangeRates.satPriceInCurrency} ${fromCurrency.toUpperCase()} minor units)`);
             return satsAmount;
         },
         
@@ -1031,9 +1035,10 @@
                     throw new Error('USD exchange rate not available');
                 }
                 
-                // Convert sats to USD cents: amount * price_of_1_sat_in_usd * 100 (to get cents)
-                const usdCentsAmount = Math.round(amount * usdRates.satPriceInCurrency * 100);
-                this.log(`Converting ${amount} sats to ${usdCentsAmount} USD cents (1 sat = ${usdRates.satPriceInCurrency} USD)`);
+                // satPriceInCurrency is in USD minor units (cents) per sat
+                // So sats * satPriceInCurrency gives us USD cents directly
+                const usdCentsAmount = Math.round(amount * usdRates.satPriceInCurrency);
+                this.log(`Converting ${amount} sats to ${usdCentsAmount} USD cents (1 sat = ${usdRates.satPriceInCurrency} USD cents)`);
                 return usdCentsAmount;
             }
             
@@ -1043,9 +1048,10 @@
                 throw new Error(`Exchange rate not available for ${fromCurrency.toUpperCase()}`);
             }
             
-            // To convert from currency to USD cents: amount / price_of_1_usd_cent_in_currency
-            const usdCentsAmount = Math.round(amount / exchangeRates.usdCentPriceInCurrency);
-            this.log(`Converting ${amount} ${fromCurrency.toUpperCase()} to ${usdCentsAmount} USD cents (1 USD cent = ${exchangeRates.usdCentPriceInCurrency} ${fromCurrency.toUpperCase()})`);
+            // Convert major currency units to minor units, then to USD cents
+            const amountInMinorUnits = amount * 100; // Convert to cents/minor units
+            const usdCentsAmount = Math.round(amountInMinorUnits / exchangeRates.usdCentPriceInCurrency);
+            this.log(`Converting ${amount} ${fromCurrency.toUpperCase()} to ${usdCentsAmount} USD cents (1 USD cent = ${exchangeRates.usdCentPriceInCurrency} ${fromCurrency.toUpperCase()} minor units)`);
             return usdCentsAmount;
         },
         
