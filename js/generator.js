@@ -244,7 +244,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.errors) {
-                throw new Error(data.errors[0].message);
+                // Check for invalid username format error
+                const errorMessage = data.errors[0].message;
+                if (errorMessage.includes('Invalid value for Username')) {
+                    throw new Error('INVALID_USERNAME_FORMAT');
+                }
+                throw new Error(errorMessage);
             }
             
             // usernameAvailable: true means username does NOT exist
@@ -253,7 +258,11 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error checking username:', error);
-            // On error, allow generation to proceed (assume username exists)
+            // Re-throw specific errors to be handled in generateCode
+            if (error.message === 'INVALID_USERNAME_FORMAT') {
+                throw error;
+            }
+            // On other errors, allow generation to proceed (assume username exists)
             return true;
         }
     }
@@ -324,7 +333,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Error during code generation:', error);
-            showUsernameValidation('Error checking username. Please try again.', true);
+            
+            if (error.message === 'INVALID_USERNAME_FORMAT') {
+                showUsernameValidation('Invalid username format. Please enter a valid Blink username without special characters or domains.', true);
+            } else {
+                showUsernameValidation('Error checking username. Please try again.', true);
+            }
         } finally {
             // Re-enable generate button
             generateBtn.disabled = false;
