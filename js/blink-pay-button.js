@@ -1504,32 +1504,69 @@
             donateButton.parentNode.replaceChild(newButton, donateButton);
             
             // Add new event listener for opening lightning deeplink
-            newButton.addEventListener('click', () => {
+            newButton.addEventListener('click', async () => {
                 const lightningUrl = `lightning:${paymentRequest}`;
                 
-                try {
-                    // Try to open the lightning deeplink
-                    window.open(lightningUrl, '_self');
-                    this.log(`Opened lightning deeplink: ${lightningUrl.substring(0, 30)}...`);
-                } catch (err) {
-                    console.error('Could not open lightning deeplink: ', err);
-                    // Fallback: copy to clipboard if deeplink fails
-                    navigator.clipboard.writeText(paymentRequest).then(() => {
-                        this.showStatus('success', this.t('invoiceCopied'));
+                // Check if WebLN is available (desktop browser extensions like Alby)
+                if (typeof window.webln !== 'undefined') {
+                    try {
+                        // Enable WebLN if not already enabled
+                        if (!window.webln.enabled) {
+                            await window.webln.enable();
+                        }
                         
-                        // Auto-hide the status message after 2 seconds
-                        setTimeout(() => {
-                            this.showStatus('', '');
-                        }, 2000);
-                    }).catch(copyErr => {
-                        console.error('Could not copy invoice as fallback: ', copyErr);
-                        this.showStatus('error', this.t('failedToCopy'));
+                        // Use WebLN to send payment
+                        this.log(`Using WebLN to send payment`);
+                        await window.webln.sendPayment(paymentRequest);
+                        this.log(`WebLN payment request sent successfully`);
                         
-                        // Auto-hide error after 3 seconds
+                        // Show feedback that payment was initiated
+                        this.showStatus('success', 'Payment request sent to wallet');
                         setTimeout(() => {
                             this.showStatus('', '');
                         }, 3000);
-                    });
+                        
+                        return; // Exit early if WebLN worked
+                    } catch (weblnError) {
+                        console.error('WebLN payment failed: ', weblnError);
+                        this.log(`WebLN error: ${weblnError.message}`);
+                        // Fall through to other methods
+                    }
+                }
+                
+                // Detect mobile devices for lightning: URL scheme
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                if (isMobile) {
+                    try {
+                        // Use lightning: URL scheme on mobile
+                        window.open(lightningUrl, '_self');
+                        this.log(`Opened lightning deeplink on mobile: ${lightningUrl.substring(0, 30)}...`);
+                        return;
+                    } catch (err) {
+                        console.error('Could not open lightning deeplink on mobile: ', err);
+                        // Fall through to clipboard fallback
+                    }
+                }
+                
+                // Fallback: copy to clipboard if WebLN and mobile deeplinks both fail
+                try {
+                    await navigator.clipboard.writeText(paymentRequest);
+                    this.showStatus('success', this.t('invoiceCopied'));
+                    this.log(`Fallback: Copied payment request to clipboard`);
+                    
+                    // Auto-hide the status message after 2 seconds
+                    setTimeout(() => {
+                        this.showStatus('', '');
+                    }, 2000);
+                } catch (copyErr) {
+                    console.error('Could not copy invoice as fallback: ', copyErr);
+                    this.showStatus('error', this.t('failedToCopy'));
+                    
+                    // Auto-hide error after 3 seconds
+                    setTimeout(() => {
+                        this.showStatus('', '');
+                    }, 3000);
                 }
             });
             
