@@ -247,23 +247,22 @@
             flex: 1;
         }
         
-        .light-mode .mode-options label.light-label {
+        .mode-options label {
             background-color: #f1f1f1;
             color: #333;
-            border: 2px solid var(--blink-orange);
+            border: 2px solid transparent;
         }
         
-        .light-mode .mode-options label.dark-label {
-            background-color: #ddd;
-            color: #444;
-        }
-        
-        .dark-mode .mode-options label.light-label {
+        .dark-mode .mode-options label {
             background-color: #444;
             color: #ddd;
         }
         
-        .dark-mode .mode-options label.dark-label {
+        .mode-options label.selected {
+            border: 2px solid var(--blink-orange);
+        }
+        
+        .dark-mode .mode-options label.selected {
             background-color: #333;
             color: #FFF;
             border: 2px solid var(--blink-orange);
@@ -395,4 +394,5 @@
 
     <script src="js/generator.js"></script>
 </body>
+</html> 
 </html> 

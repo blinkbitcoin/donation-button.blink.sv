@@ -107,14 +107,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize language dropdown on page load
     populateLanguageDropdown();
     
+    // Initialize theme selection visual feedback
+    updateThemeSelection();
+    
     // Listen for widget theme changes
     document.querySelectorAll('input[name="widget-theme"]').forEach(radio => {
         radio.addEventListener('change', function() {
             currentWidgetTheme = this.value;
+            updateThemeSelection();
             updateWidgetPreview();
             updateGeneratedCode();
         });
     });
+    
+    // Function to update visual feedback for theme selection
+    function updateThemeSelection() {
+        // Remove selected class from all labels
+        document.querySelectorAll('.mode-options label').forEach(label => {
+            label.classList.remove('selected');
+        });
+        
+        // Add selected class to the currently selected theme's label
+        const selectedRadio = document.querySelector(`input[name="widget-theme"][value="${currentWidgetTheme}"]`);
+        if (selectedRadio) {
+            selectedRadio.parentElement.classList.add('selected');
+        }
+    }
 
     // Listen for currency input changes
     currencyInput.addEventListener('input', function() {
