@@ -819,13 +819,16 @@
                     box-shadow: none !important;
                 }
                 .blink-pay-qr {
-                    display: none !important;
+                    display: none;
                     width: 100% !important;
                     height: 120px !important;
                     justify-content: center !important;
                     align-items: flex-start !important;
                     padding-top: 10px !important;
                     box-sizing: border-box !important;
+                }
+                .blink-pay-qr.blink-pay-show {
+                    display: flex !important;
                 }
                 .blink-pay-qr img {
                     width: 120px !important;
@@ -836,13 +839,16 @@
                     box-sizing: border-box !important;
                 }
                 .blink-pay-success {
-                    display: none !important;
+                    display: none;
                     width: 100% !important;
                     height: 120px !important;
                     justify-content: center !important;
                     align-items: flex-start !important;
                     padding-top: 15px !important;
                     box-sizing: border-box !important;
+                }
+                .blink-pay-success.blink-pay-show {
+                    display: flex !important;
                 }
                 .blink-pay-success img {
                     width: 90px !important;
@@ -1395,7 +1401,7 @@
             const amountInput = document.getElementById('blink-pay-amount');
             
             // Hide success container if visible
-            successContainer.style.display = 'none';
+            successContainer.classList.remove('blink-pay-show');
             successContainer.style.visibility = 'hidden';
             
             // Hide input field more robustly
@@ -1415,7 +1421,7 @@
             qrImage.alt = this.t('qrCodeAlt');
             qrContainer.innerHTML = '';
             qrContainer.appendChild(qrImage);
-            qrContainer.style.display = 'flex';
+            qrContainer.classList.add('blink-pay-show');
             qrContainer.style.visibility = 'visible';
             qrContainer.style.opacity = '1';
             
@@ -1705,7 +1711,7 @@
             const amountInput = document.getElementById('blink-pay-amount');
             
             // Hide QR code completely
-            qrContainer.style.display = 'none';
+            qrContainer.classList.remove('blink-pay-show');
             qrContainer.style.visibility = 'hidden';
             qrContainer.style.opacity = '0';
             
@@ -1718,7 +1724,7 @@
             inputGroup.style.overflow = 'hidden';
             
             // Show success icon
-            successContainer.style.display = 'flex';
+            successContainer.classList.add('blink-pay-show');
             successContainer.style.visibility = 'visible';
             successContainer.style.opacity = '1';
             
@@ -1739,7 +1745,7 @@
             // Add new event listener to reset the widget
             newButton.addEventListener('click', () => {
                 // Reset the widget back to initial state
-                successContainer.style.display = 'none';
+                successContainer.classList.remove('blink-pay-show');
                 successContainer.style.visibility = 'hidden';
                 successContainer.style.opacity = '0';
                 this.updateButtonText(newButton, this.t('buttonText'));
