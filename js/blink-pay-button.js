@@ -1474,6 +1474,9 @@
                 navigator.clipboard.writeText(paymentRequest).then(() => {
                     this.showStatus('success', this.t('invoiceCopied'));
                     
+                    // Create and show prominent notification above QR code
+                    this.showQrNotification(this.t('invoiceCopied'));
+                    
                     // Auto-hide the status message after 2 seconds
                     setTimeout(() => {
                         this.showStatus('', '');
@@ -1481,6 +1484,9 @@
                 }).catch(err => {
                     console.error('Could not copy invoice from QR: ', err);
                     this.showStatus('error', this.t('failedToCopy'));
+                    
+                    // Show error notification above QR code
+                    this.showQrNotification(this.t('failedToCopy'), true);
                     
                     // Auto-hide error after 3 seconds
                     setTimeout(() => {
@@ -1917,6 +1923,75 @@
                 statusEl.textContent = '';
                 statusEl.style.display = 'none';
             }
+        },
+        
+        // Show notification above QR code
+        showQrNotification: function(message, isError = false) {
+            const qrContainer = document.getElementById('blink-pay-qr');
+            if (!qrContainer) return;
+            
+            // Remove any existing notification
+            const existingNotification = document.getElementById('blink-pay-qr-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.id = 'blink-pay-qr-notification';
+            notification.textContent = message;
+            
+            // Style the notification
+            const bgColor = isError ? '#ffebee' : '#e8f5e8';
+            const textColor = isError ? '#c62828' : '#2e7d32';
+            const borderColor = isError ? '#ffcdd2' : '#c8e6c8';
+            
+            notification.style.cssText = `
+                position: absolute !important;
+                top: -35px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                background-color: ${bgColor} !important;
+                color: ${textColor} !important;
+                border: 1px solid ${borderColor} !important;
+                border-radius: 6px !important;
+                padding: 6px 12px !important;
+                font-size: 12px !important;
+                font-weight: 500 !important;
+                font-family: 'IBM Plex Sans', sans-serif !important;
+                white-space: nowrap !important;
+                z-index: 1000 !important;
+                opacity: 0 !important;
+                transition: opacity 0.3s ease !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+                pointer-events: none !important;
+                margin: 0 !important;
+            `;
+            
+            // Make QR container relative for positioning
+            qrContainer.style.position = 'relative';
+            
+            // Add notification to QR container
+            qrContainer.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+            }, 10);
+            
+            // Auto-hide after 2.5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, 2500);
+            
+            this.log(`QR notification shown: ${message}`);
         },
         
         // Utility to adjust color brightness
