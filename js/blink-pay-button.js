@@ -1279,15 +1279,15 @@
                     if (typeof this.createInvoice !== 'function') {
                         throw new Error('createInvoice is not a function - this context may be lost');
                     }
-                    const paymentRequest = await this.createInvoice(walletInfo.id, convertedAmount, walletInfo.currency);
-                    if (!paymentRequest) {
+                    const invoiceResult = await this.createInvoice(walletInfo.id, convertedAmount, walletInfo.currency);
+                    if (!invoiceResult || !invoiceResult.paymentRequest) {
                         throw new Error('Could not create invoice');
                     }
-                    this.log(`Created invoice`, { paymentRequest: paymentRequest.substring(0, 30) + '...' });
+                    this.log(`Created invoice`, { paymentRequest: invoiceResult.paymentRequest.substring(0, 30) + '...', expiryMinutes: invoiceResult.expiryMinutes });
                     
                     // Step 3: Show QR code and set up payment monitoring
-                    this.displayInvoice(paymentRequest);
-                    this.subscribeToPaymentStatus(paymentRequest);
+                    this.displayInvoice(invoiceResult.paymentRequest, invoiceResult.expiryMinutes);
+                    this.subscribeToPaymentStatus(invoiceResult.paymentRequest);
                     
                 } catch (error) {
                     this.log(`Error in donation process: ${error.message}`, error);
@@ -1353,10 +1353,11 @@
         
         // Create a lightning invoice
         createInvoice: async function(walletId, amount, currency) {
-            let mutation, mutationName, variables;
+            let mutation, mutationName, variables, expiryMinutes;
             
             if (currency === 'BTC') {
-                // Use BTC mutation
+                // Use BTC mutation - 15 minutes expiry
+                expiryMinutes = 15;
                 mutation = `
                 mutation Mutation($input: LnInvoiceCreateOnBehalfOfRecipientInput!) {
                     lnInvoiceCreateOnBehalfOfRecipient(input: $input) {
@@ -1372,13 +1373,15 @@
                 input: {
                     recipientWalletId: walletId,
                     amount: amount.toString(),
-                        memo: `${this.username} donation button`
+                    memo: `${this.username} donation button`,
+                    expiresIn: "15"
                 }
             };
             
                 mutationName = 'lnInvoiceCreateOnBehalfOfRecipient';
             } else if (currency === 'USD') {
-                // Use USD mutation
+                // Use USD mutation - 5 minutes expiry
+                expiryMinutes = 5;
                 mutation = `
                     mutation LnUsdInvoiceCreateOnBehalfOfRecipient($input: LnUsdInvoiceCreateOnBehalfOfRecipientInput!) {
                         lnUsdInvoiceCreateOnBehalfOfRecipient(input: $input) {
@@ -1394,7 +1397,8 @@
                     input: {
                         amount: amount.toString(),
                         recipientWalletId: walletId,
-                        memo: `${this.username} donation button`
+                        memo: `${this.username} donation button`,
+                        expiresIn: "5"
                     }
                 };
                 
@@ -1423,7 +1427,10 @@
                     throw new Error(data.errors[0].message || 'Error creating invoice');
                 }
                 
-                return data.data[mutationName].invoice.paymentRequest;
+                return {
+                    paymentRequest: data.data[mutationName].invoice.paymentRequest,
+                    expiryMinutes: expiryMinutes
+                };
                 
             } catch (error) {
                 this.log(`API error for ${mutationName}: ${error.message}`, error);
@@ -1433,7 +1440,7 @@
         },
         
         // Display the invoice and QR code
-        displayInvoice: function(paymentRequest) {
+        displayInvoice: function(paymentRequest, expiryMinutes) {
             const qrContainer = document.getElementById('blink-pay-qr');
             const successContainer = document.getElementById('blink-pay-success');
             const amountInput = document.getElementById('blink-pay-amount');
@@ -1449,6 +1456,47 @@
             inputGroup.style.opacity = '0';
             inputGroup.style.height = '0';
             inputGroup.style.overflow = 'hidden';
+            
+            // Create countdown timer
+            const countdownElement = document.createElement('div');
+            countdownElement.id = 'blink-pay-countdown';
+            countdownElement.style.cssText = `
+                text-align: center !important;
+                font-size: 11px !important;
+                font-family: 'IBM Plex Sans', sans-serif !important;
+                color: #666666 !important;
+                margin-bottom: 8px !important;
+                font-weight: 400 !important;
+                opacity: 0.8 !important;
+                line-height: 1.2 !important;
+            `;
+            
+            // Initialize countdown
+            let totalSeconds = expiryMinutes * 60;
+            let countdownInterval;
+            
+            const updateCountdown = () => {
+                const minutes = Math.floor(totalSeconds / 60);
+                const seconds = totalSeconds % 60;
+                const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                countdownElement.textContent = formattedTime;
+                
+                if (totalSeconds <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.style.color = '#c62828 !important';
+                    countdownElement.textContent = '0:00';
+                    this.log('Invoice expired');
+                } else {
+                    totalSeconds--;
+                }
+            };
+            
+            // Start countdown
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+            
+            // Store interval for cleanup
+            this.countdownInterval = countdownInterval;
             
             // Generate clean, maximally scannable QR code - keep larger size for better scanning
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentRequest)}`;
@@ -1496,6 +1544,7 @@
             });
             
             qrContainer.innerHTML = '';
+            qrContainer.appendChild(countdownElement);
             qrContainer.appendChild(qrImage);
             qrContainer.classList.add('blink-pay-show');
             qrContainer.style.visibility = 'visible';
@@ -1830,6 +1879,13 @@
         // Handle successful payment
         handlePaymentSuccess: function() {
             this.log(`Handling successful payment`);
+            
+            // Clean up countdown interval
+            if (this.countdownInterval) {
+                clearInterval(this.countdownInterval);
+                this.countdownInterval = null;
+                this.log('Countdown timer cleared');
+            }
             
             // Show success icon
             const successContainer = document.getElementById('blink-pay-success');
