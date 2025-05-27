@@ -946,6 +946,10 @@
                                 base
                                 offset
                             }
+                            usdCentPrice {
+                                base
+                                offset
+                            }
                         }
                     }
                 `;
@@ -973,13 +977,24 @@
                 }
                 
                 const btcSatPrice = data.data.realtimePrice.btcSatPrice;
-                const exchangeRate = btcSatPrice.base * Math.pow(10, btcSatPrice.offset);
+                const usdCentPrice = data.data.realtimePrice.usdCentPrice;
                 
-                // Cache the rate
-                this.exchangeRates[currencyCode] = exchangeRate;
-                this.log(`Exchange rate for ${currencyCode}: ${exchangeRate} sats per unit`);
+                // Calculate rates: price of 1 sat and 1 USD cent in the given currency
+                const satPriceInCurrency = btcSatPrice.base / Math.pow(10, btcSatPrice.offset);
+                const usdCentPriceInCurrency = usdCentPrice.base / Math.pow(10, usdCentPrice.offset);
                 
-                return exchangeRate;
+                // Cache both rates
+                this.exchangeRates[currencyCode] = {
+                    satPriceInCurrency: satPriceInCurrency,
+                    usdCentPriceInCurrency: usdCentPriceInCurrency
+                };
+                
+                this.log(`Exchange rates for ${currencyCode}:`, {
+                    satPriceInCurrency: satPriceInCurrency,
+                    usdCentPriceInCurrency: usdCentPriceInCurrency
+                });
+                
+                return this.exchangeRates[currencyCode];
                 
             } catch (error) {
                 this.log(`Error fetching exchange rate for ${currencyCode}: ${error.message}`, error);
@@ -989,21 +1004,49 @@
             }
         },
         
-        // Convert amount to sats based on selected currency
-        convertToSats: function(amount) {
-            if (this.selectedCurrency === 'sats') {
+        // Convert amount to satoshis
+        convertToSatoshis: function(amount, fromCurrency) {
+            if (fromCurrency === 'sats') {
                 return amount; // Already in sats
             }
             
             // For fiat currencies, use cached exchange rate
-            const exchangeRate = this.exchangeRates[this.selectedCurrency];
-            if (!exchangeRate) {
-                throw new Error(`Exchange rate not available for ${this.selectedCurrency.toUpperCase()}`);
+            const exchangeRates = this.exchangeRates[fromCurrency];
+            if (!exchangeRates || !exchangeRates.satPriceInCurrency) {
+                throw new Error(`Exchange rate not available for ${fromCurrency.toUpperCase()}`);
             }
             
-            const satsAmount = Math.round(amount * exchangeRate);
-            this.log(`Converting ${amount} ${this.selectedCurrency.toUpperCase()} to ${satsAmount} sats (rate: ${exchangeRate.toFixed(2)})`);
+            // To convert from currency to sats: amount / price_of_1_sat_in_currency
+            const satsAmount = Math.round(amount / exchangeRates.satPriceInCurrency);
+            this.log(`Converting ${amount} ${fromCurrency.toUpperCase()} to ${satsAmount} sats (1 sat = ${exchangeRates.satPriceInCurrency} ${fromCurrency.toUpperCase()})`);
             return satsAmount;
+        },
+        
+        // Convert amount to USD cents
+        convertToUsdCents: function(amount, fromCurrency) {
+            if (fromCurrency === 'sats') {
+                // For sats to USD cents, we need USD exchange rate
+                const usdRates = this.exchangeRates['USD'];
+                if (!usdRates || !usdRates.satPriceInCurrency) {
+                    throw new Error('USD exchange rate not available');
+                }
+                
+                // Convert sats to USD cents: amount * price_of_1_sat_in_usd * 100 (to get cents)
+                const usdCentsAmount = Math.round(amount * usdRates.satPriceInCurrency * 100);
+                this.log(`Converting ${amount} sats to ${usdCentsAmount} USD cents (1 sat = ${usdRates.satPriceInCurrency} USD)`);
+                return usdCentsAmount;
+            }
+            
+            // For fiat currencies, use cached exchange rate
+            const exchangeRates = this.exchangeRates[fromCurrency];
+            if (!exchangeRates || !exchangeRates.usdCentPriceInCurrency) {
+                throw new Error(`Exchange rate not available for ${fromCurrency.toUpperCase()}`);
+            }
+            
+            // To convert from currency to USD cents: amount / price_of_1_usd_cent_in_currency
+            const usdCentsAmount = Math.round(amount / exchangeRates.usdCentPriceInCurrency);
+            this.log(`Converting ${amount} ${fromCurrency.toUpperCase()} to ${usdCentsAmount} USD cents (1 USD cent = ${exchangeRates.usdCentPriceInCurrency} ${fromCurrency.toUpperCase()})`);
+            return usdCentsAmount;
         },
         
         // Handle the donation process
@@ -1019,11 +1062,9 @@
                     return;
                 }
                 
-                // Convert to sats if necessary and validate minimum
-                let amountInSats;
+                // Validate amount
                 if (this.selectedCurrency === 'sats') {
-                    amountInSats = amount;
-                    if (amountInSats < this.minAmount) {
+                    if (amount < this.minAmount) {
                         this.showStatus('error', `${this.t('amountMustBeAtLeast')} ${this.minAmount} sats`);
                         return;
                     }
@@ -1033,18 +1074,16 @@
                         return;
                     }
                     
-                    let exchangeRate = this.exchangeRates[this.selectedCurrency];
-                    if (!exchangeRate) {
-                        // If we don't have the exchange rate, try to fetch it
+                    // Ensure we have exchange rates for the selected currency
+                    let exchangeRates = this.exchangeRates[this.selectedCurrency];
+                    if (!exchangeRates) {
                         try {
                             await this.fetchExchangeRate(this.selectedCurrency);
-                            exchangeRate = this.exchangeRates[this.selectedCurrency];
+                            exchangeRates = this.exchangeRates[this.selectedCurrency];
                         } catch (error) {
                             return; // Error already shown in fetchExchangeRate
                         }
                     }
-                    
-                    amountInSats = Math.round(amount * exchangeRate);
                 }
                 
                 // Clear any previous status messages and start loading
@@ -1052,7 +1091,7 @@
                 this.setButtonLoading(true);
                 
                 try {
-                    this.log(`Processing donation: ${amount} ${this.selectedCurrency} (${amountInSats} sats)`);
+                    this.log(`Processing donation: ${amount} ${this.selectedCurrency}`);
                     
                     // Step 1: Get wallet information
                     this.log('About to call getAccountDefaultWallet');
@@ -1065,12 +1104,30 @@
                     }
                     this.log(`Retrieved wallet info:`, walletInfo);
                     
-                    // Step 2: Create invoice using appropriate currency
+                    // Step 2: Convert amount to the correct unit based on wallet currency
+                    let convertedAmount;
+                    if (walletInfo.currency === 'BTC') {
+                        // Convert to satoshis for BTC wallets
+                        convertedAmount = this.convertToSatoshis(amount, this.selectedCurrency);
+                        this.log(`Converted to ${convertedAmount} satoshis for BTC wallet`);
+                    } else if (walletInfo.currency === 'USD') {
+                        // Convert to USD cents for USD wallets
+                        // First ensure we have USD rates if converting from sats
+                        if (this.selectedCurrency === 'sats' && !this.exchangeRates['USD']) {
+                            await this.fetchExchangeRate('USD');
+                        }
+                        convertedAmount = this.convertToUsdCents(amount, this.selectedCurrency);
+                        this.log(`Converted to ${convertedAmount} USD cents for USD wallet`);
+                    } else {
+                        throw new Error(`Unsupported wallet currency: ${walletInfo.currency}`);
+                    }
+                    
+                    // Step 3: Create invoice using appropriate currency
                     this.log('About to call createInvoice');
                     if (typeof this.createInvoice !== 'function') {
                         throw new Error('createInvoice is not a function - this context may be lost');
                     }
-                    const paymentRequest = await this.createInvoice(walletInfo.id, amountInSats, walletInfo.currency);
+                    const paymentRequest = await this.createInvoice(walletInfo.id, convertedAmount, walletInfo.currency);
                     if (!paymentRequest) {
                         throw new Error('Could not create invoice');
                     }
