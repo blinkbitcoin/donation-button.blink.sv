@@ -1054,23 +1054,23 @@
                 try {
                     this.log(`Processing donation: ${amount} ${this.selectedCurrency} (${amountInSats} sats)`);
                     
-                    // Step 1: Get wallet ID
-                    this.log('About to call getAccountDefaultWalletId');
-                    if (typeof this.getAccountDefaultWalletId !== 'function') {
-                        throw new Error('getAccountDefaultWalletId is not a function - this context may be lost');
+                    // Step 1: Get wallet information
+                    this.log('About to call getAccountDefaultWallet');
+                    if (typeof this.getAccountDefaultWallet !== 'function') {
+                        throw new Error('getAccountDefaultWallet is not a function - this context may be lost');
                     }
-                    const walletId = await this.getAccountDefaultWalletId(this.username);
-                    if (!walletId) {
-                        throw new Error('Could not retrieve wallet ID for this username');
+                    const walletInfo = await this.getAccountDefaultWallet(this.username);
+                    if (!walletInfo || !walletInfo.id) {
+                        throw new Error('Could not retrieve wallet information for this username');
                     }
-                    this.log(`Retrieved wallet ID: ${walletId}`);
+                    this.log(`Retrieved wallet info:`, walletInfo);
                     
-                    // Step 2: Create invoice
+                    // Step 2: Create invoice using appropriate currency
                     this.log('About to call createInvoice');
                     if (typeof this.createInvoice !== 'function') {
                         throw new Error('createInvoice is not a function - this context may be lost');
                     }
-                    const paymentRequest = await this.createInvoice(walletId, amountInSats);
+                    const paymentRequest = await this.createInvoice(walletInfo.id, amountInSats, walletInfo.currency);
                     if (!paymentRequest) {
                         throw new Error('Could not create invoice');
                     }
@@ -1095,12 +1095,13 @@
             }
         },
         
-        // Get the default wallet ID for a username
-        getAccountDefaultWalletId: async function(username) {
+        // Get the default wallet information for a username
+        getAccountDefaultWallet: async function(username) {
             const query = `
                 query Query($username: Username!) {
                     accountDefaultWallet(username: $username) {
                         id
+                        currency
                     }
                 }
             `;
@@ -1126,40 +1127,75 @@
                 this.log(`API response for accountDefaultWallet`, data);
                 
                 if (data.errors) {
-                    throw new Error(data.errors[0].message || 'Error fetching wallet ID');
+                    throw new Error(data.errors[0].message || 'Error fetching wallet information');
                 }
                 
-                return data.data.accountDefaultWallet?.id;
+                return {
+                    id: data.data.accountDefaultWallet?.id,
+                    currency: data.data.accountDefaultWallet?.currency
+                };
                 
             } catch (error) {
                 this.log(`API error for accountDefaultWallet: ${error.message}`, error);
-                console.error('Error getting wallet ID:', error);
+                console.error('Error getting wallet information:', error);
                 throw error;
             }
         },
         
         // Create a lightning invoice
-        createInvoice: async function(walletId, amount) {
-            const mutation = `
-                mutation Mutation($input: LnInvoiceCreateOnBehalfOfRecipientInput!) {
-                    lnInvoiceCreateOnBehalfOfRecipient(input: $input) {
-                        invoice {
-                            paymentRequest
+        createInvoice: async function(walletId, amount, currency) {
+            let mutation, mutationName, variables;
+            
+            if (currency === 'BTC') {
+                // Use BTC mutation
+                mutation = `
+                    mutation Mutation($input: LnInvoiceCreateOnBehalfOfRecipientInput!) {
+                        lnInvoiceCreateOnBehalfOfRecipient(input: $input) {
+                            invoice {
+                                paymentRequest
+                                satoshis
+                            }
                         }
                     }
-                }
-            `;
-            
-            const variables = {
-                input: {
-                    recipientWalletId: walletId,
-                    amount: amount.toString(),
-                    memo: `${this.username} donation widget`
-                }
-            };
+                `;
+                
+                variables = {
+                    input: {
+                        recipientWalletId: walletId,
+                        amount: amount.toString(),
+                        memo: `${this.username} donation button`
+                    }
+                };
+                
+                mutationName = 'lnInvoiceCreateOnBehalfOfRecipient';
+            } else if (currency === 'USD') {
+                // Use USD mutation
+                mutation = `
+                    mutation LnUsdInvoiceCreateOnBehalfOfRecipient($input: LnUsdInvoiceCreateOnBehalfOfRecipientInput!) {
+                        lnUsdInvoiceCreateOnBehalfOfRecipient(input: $input) {
+                            invoice {
+                                paymentRequest
+                                satoshis
+                            }
+                        }
+                    }
+                `;
+                
+                variables = {
+                    input: {
+                        amount: amount.toString(),
+                        recipientWalletId: walletId,
+                        memo: `${this.username} donation button`
+                    }
+                };
+                
+                mutationName = 'lnUsdInvoiceCreateOnBehalfOfRecipient';
+            } else {
+                throw new Error(`Unsupported currency: ${currency}`);
+            }
             
             try {
-                this.log(`Fetching from API: lnInvoiceCreateOnBehalfOfRecipient`, { variables });
+                this.log(`Fetching from API: ${mutationName}`, { variables });
                 const response = await fetch('https://api.blink.sv/graphql', {
                     method: 'POST',
                     headers: {
@@ -1172,16 +1208,16 @@
                 });
                 
                 const data = await response.json();
-                this.log(`API response for lnInvoiceCreateOnBehalfOfRecipient`, data);
+                this.log(`API response for ${mutationName}`, data);
                 
                 if (data.errors) {
                     throw new Error(data.errors[0].message || 'Error creating invoice');
                 }
                 
-                return data.data.lnInvoiceCreateOnBehalfOfRecipient.invoice.paymentRequest;
+                return data.data[mutationName].invoice.paymentRequest;
                 
             } catch (error) {
-                this.log(`API error for lnInvoiceCreateOnBehalfOfRecipient: ${error.message}`, error);
+                this.log(`API error for ${mutationName}: ${error.message}`, error);
                 console.error('Error creating invoice:', error);
                 throw error;
             }
