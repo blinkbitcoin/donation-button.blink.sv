@@ -1322,24 +1322,24 @@
             if (currency === 'BTC') {
                 // Use BTC mutation
                 mutation = `
-                    mutation Mutation($input: LnInvoiceCreateOnBehalfOfRecipientInput!) {
-                        lnInvoiceCreateOnBehalfOfRecipient(input: $input) {
-                            invoice {
-                                paymentRequest
+                mutation Mutation($input: LnInvoiceCreateOnBehalfOfRecipientInput!) {
+                    lnInvoiceCreateOnBehalfOfRecipient(input: $input) {
+                        invoice {
+                            paymentRequest
                                 satoshis
-                            }
                         }
                     }
-                `;
-                
+                }
+            `;
+            
                 variables = {
-                    input: {
-                        recipientWalletId: walletId,
-                        amount: amount.toString(),
+                input: {
+                    recipientWalletId: walletId,
+                    amount: amount.toString(),
                         memo: `${this.username} donation button`
-                    }
-                };
-                
+                }
+            };
+            
                 mutationName = 'lnInvoiceCreateOnBehalfOfRecipient';
             } else if (currency === 'USD') {
                 // Use USD mutation
@@ -1421,6 +1421,28 @@
             const qrImage = document.createElement('img');
             qrImage.src = qrUrl;
             qrImage.alt = this.t('qrCodeAlt');
+            
+            // Add click-to-copy functionality to QR code
+            qrImage.style.cursor = 'pointer';
+            qrImage.style.transition = 'opacity 0.2s ease';
+            qrImage.title = 'Click to copy payment request';
+            
+            qrImage.addEventListener('click', () => {
+                // Visual feedback on click
+                qrImage.style.opacity = '0.7';
+                setTimeout(() => {
+                    qrImage.style.opacity = '1';
+                }, 200);
+                
+                // Copy payment request to clipboard
+                navigator.clipboard.writeText(paymentRequest).then(() => {
+                    this.showStatus('success', this.t('invoiceCopied'));
+                }).catch(err => {
+                    console.error('Could not copy invoice from QR: ', err);
+                    this.showStatus('error', this.t('failedToCopy'));
+                });
+            });
+            
             qrContainer.innerHTML = '';
             qrContainer.appendChild(qrImage);
             qrContainer.classList.add('blink-pay-show');
