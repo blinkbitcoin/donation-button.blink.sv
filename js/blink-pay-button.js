@@ -819,29 +819,34 @@
                     box-shadow: none !important;
                 }
                 .blink-pay-qr {
-                    display: none;
-                    width: 100%;
-                    height: 140px;
-                    justify-content: center;
-                    align-items: center;
+                    display: none !important;
+                    width: 100% !important;
+                    height: 120px !important;
+                    justify-content: center !important;
+                    align-items: flex-start !important;
+                    padding-top: 10px !important;
+                    box-sizing: border-box !important;
                 }
                 .blink-pay-qr img {
-                    width: 130px;
-                    height: 130px;
-                    background-color: white;
-                    border-radius: 8px;
-                    padding: 8px;
+                    width: 120px !important;
+                    height: 120px !important;
+                    background-color: white !important;
+                    border-radius: 8px !important;
+                    padding: 6px !important;
+                    box-sizing: border-box !important;
                 }
                 .blink-pay-success {
-                    display: none;
-                    width: 100%;
-                    height: 140px;
-                    justify-content: center;
-                    align-items: center;
+                    display: none !important;
+                    width: 100% !important;
+                    height: 120px !important;
+                    justify-content: center !important;
+                    align-items: flex-start !important;
+                    padding-top: 15px !important;
+                    box-sizing: border-box !important;
                 }
                 .blink-pay-success img {
-                    width: 100px;
-                    height: 100px;
+                    width: 90px !important;
+                    height: 90px !important;
                 }
                 
                 /* Bottom third - Button & Footer */
@@ -1391,9 +1396,15 @@
             
             // Hide success container if visible
             successContainer.style.display = 'none';
+            successContainer.style.visibility = 'hidden';
             
-            // Hide input field
-            amountInput.parentElement.style.display = 'none';
+            // Hide input field more robustly
+            const inputGroup = amountInput.parentElement;
+            inputGroup.style.display = 'none';
+            inputGroup.style.visibility = 'hidden';
+            inputGroup.style.opacity = '0';
+            inputGroup.style.height = '0';
+            inputGroup.style.overflow = 'hidden';
             
             // Generate clean, maximally scannable QR code
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(paymentRequest)}`;
@@ -1405,6 +1416,8 @@
             qrContainer.innerHTML = '';
             qrContainer.appendChild(qrImage);
             qrContainer.style.display = 'flex';
+            qrContainer.style.visibility = 'visible';
+            qrContainer.style.opacity = '1';
             
             // Update the button for copy to clipboard functionality
             const donateButton = document.getElementById('blink-pay-button');
@@ -1691,12 +1704,23 @@
             const qrContainer = document.getElementById('blink-pay-qr');
             const amountInput = document.getElementById('blink-pay-amount');
             
-            // Hide QR code and amount input
+            // Hide QR code completely
             qrContainer.style.display = 'none';
-            amountInput.parentElement.style.display = 'none';
+            qrContainer.style.visibility = 'hidden';
+            qrContainer.style.opacity = '0';
+            
+            // Hide amount input completely
+            const inputGroup = amountInput.parentElement;
+            inputGroup.style.display = 'none';
+            inputGroup.style.visibility = 'hidden';
+            inputGroup.style.opacity = '0';
+            inputGroup.style.height = '0';
+            inputGroup.style.overflow = 'hidden';
             
             // Show success icon
             successContainer.style.display = 'flex';
+            successContainer.style.visibility = 'visible';
+            successContainer.style.opacity = '1';
             
             // Reset the donation form
             const donateButton = document.getElementById('blink-pay-button');
@@ -1716,11 +1740,18 @@
             newButton.addEventListener('click', () => {
                 // Reset the widget back to initial state
                 successContainer.style.display = 'none';
+                successContainer.style.visibility = 'hidden';
+                successContainer.style.opacity = '0';
                 this.updateButtonText(newButton, this.t('buttonText'));
                 newButton.classList.remove('success');
                 
                 // Show input field again
-                amountInput.parentElement.style.display = 'flex';
+                const inputGroup = amountInput.parentElement;
+                inputGroup.style.display = 'flex';
+                inputGroup.style.visibility = 'visible';
+                inputGroup.style.opacity = '1';
+                inputGroup.style.height = 'auto';
+                inputGroup.style.overflow = 'visible';
                 
                 // Remove all event listeners again
                 const resetButton = newButton.cloneNode(true);
