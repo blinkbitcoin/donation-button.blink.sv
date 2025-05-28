@@ -861,7 +861,7 @@
                     justify-content: center !important;
                     align-items: center !important;
                     padding-top: 5px !important;
-                    margin-bottom: 15px !important;
+                    margin-bottom: 25px !important;
                     box-sizing: border-box !important;
                     flex-direction: column !important;
                 }
