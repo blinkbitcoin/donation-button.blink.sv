@@ -700,9 +700,10 @@
                     box-sizing: border-box !important;
                 }
                 
-                /* Custom button width support */
+                /* Custom widget width support */
                 .blink-pay-widget[data-button-width] {
                     --blink-button-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '310px'};
+                    --blink-widget-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '370px'};
                 }
                 .blink-pay-widget {
                     line-height: 1 !important;
@@ -725,7 +726,7 @@
                 
                 .blink-pay-widget {
                     font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-                    width: 100% !important;
+                    width: var(--blink-widget-width, 370px) !important;
                     height: 265px !important;
                     margin: 0 auto !important;
                     padding: 20px !important;
@@ -2194,7 +2195,7 @@
             }, 10);
         },
         
-        // Adjust button responsiveness based on container size
+        // Adjust widget and button responsiveness based on container size
         adjustButtonResponsiveness: function(button) {
             if (!button) {
                 this.log('adjustButtonResponsiveness: No button provided');
@@ -2203,17 +2204,38 @@
             
             this.log('adjustButtonResponsiveness: Function called for button:', button);
             
-            // Get the container width (the parent container that constrains the widget)
+            // Get the widget container
             const widgetContainer = button.closest('.blink-pay-widget');
             if (!widgetContainer) {
                 this.log('adjustButtonResponsiveness: No widget container found');
                 return;
             }
             
-            // Use the parent container width (the one that actually constrains the widget)
+            // Get the parent container width (the one that actually constrains the widget)
             const parentContainer = widgetContainer.parentElement;
             const containerWidth = parentContainer ? parentContainer.offsetWidth : widgetContainer.offsetWidth;
             this.log(`adjustButtonResponsiveness: Parent container width = ${containerWidth}px, Widget width = ${widgetContainer.offsetWidth}px`);
+            
+            // Set widget width based on custom width or container constraints
+            let widgetWidth;
+            if (this.buttonWidth) {
+                // Use custom width, but don't exceed container width
+                widgetWidth = Math.min(this.buttonWidth, containerWidth);
+                widgetContainer.style.setProperty('width', widgetWidth + 'px', 'important');
+                this.log(`adjustButtonResponsiveness: Set widget width to ${widgetWidth}px (custom: ${this.buttonWidth}px, container: ${containerWidth}px)`);
+            } else {
+                // Use responsive width based on container size
+                if (containerWidth <= 300) {
+                    widgetWidth = 280;
+                } else if (containerWidth <= 400) {
+                    widgetWidth = 350;
+                } else {
+                    widgetWidth = 370;
+                }
+                widgetWidth = Math.min(widgetWidth, containerWidth);
+                widgetContainer.style.setProperty('width', widgetWidth + 'px', 'important');
+                this.log(`adjustButtonResponsiveness: Set responsive widget width to ${widgetWidth}px`);
+            }
             
             // Remove any existing responsive classes
             button.classList.remove('responsive-mobile', 'responsive-tablet', 'responsive-desktop');
@@ -2248,6 +2270,7 @@
             
             this.log(`adjustButtonResponsiveness: Final button classes: ${button.className}`);
             this.log(`adjustButtonResponsiveness: Final button max-width: ${getComputedStyle(button).maxWidth}`);
+            this.log(`adjustButtonResponsiveness: Final widget width: ${widgetContainer.offsetWidth}px`);
         },
         
         // Set up resize observer for dynamic container size changes

@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add debug info
         const debugInfo = document.createElement('div');
         debugInfo.style.cssText = 'font-size: 12px; color: #666; text-align: center; margin-top: 10px; font-family: monospace;';
-        debugInfo.textContent = `Button Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (310px max)'}`;
+        debugInfo.textContent = `Widget Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (370px max)'}`;
         widgetPreview.appendChild(debugInfo);
         
         // Check if BlinkPayButton is already loaded
@@ -423,11 +423,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update debug info after initialization
                 setTimeout(() => {
+                    const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
                     const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
-                    if (button) {
-                        const actualWidth = button.offsetWidth;
+                    if (widget && button) {
+                        const widgetWidth = widget.offsetWidth;
+                        const buttonWidth = button.offsetWidth;
                         const maxWidth = getComputedStyle(button).maxWidth;
-                        debugInfo.textContent = `Button Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (310px max)'} | Actual: ${actualWidth}px | Max-width: ${maxWidth}`;
+                        debugInfo.textContent = `Widget Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (370px max)'} | Widget: ${widgetWidth}px | Button: ${buttonWidth}px`;
                     }
                 }, 1000);
             }, 50);
@@ -455,11 +457,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Update debug info after initialization
                     setTimeout(() => {
+                        const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
                         const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
-                        if (button) {
-                            const actualWidth = button.offsetWidth;
+                        if (widget && button) {
+                            const widgetWidth = widget.offsetWidth;
+                            const buttonWidth = button.offsetWidth;
                             const maxWidth = getComputedStyle(button).maxWidth;
-                            debugInfo.textContent = `Button Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (310px max)'} | Actual: ${actualWidth}px | Max-width: ${maxWidth}`;
+                            debugInfo.textContent = `Widget Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (370px max)'} | Widget: ${widgetWidth}px | Button: ${buttonWidth}px`;
                         }
                     }, 1000);
                 }, 50);
