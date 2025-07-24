@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WordPress Test Snippet</title>
+    <style>
+        /* WordPress Test Container - 220px width */
+        .wordpress-test-container {
+            width: 220px;
+            border: 2px solid #007cba;
+            padding: 15px;
+            margin: 20px auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .wordpress-test-container::before {
+            content: "WordPress Test Container (220px)";
+            display: block;
+            text-align: center;
+            font-weight: bold;
+            color: #007cba;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        /* Debug info styling */
+        .debug-info {
+            background: #e9ecef;
+            padding: 8px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <h1>WordPress Test Snippet</h1>
+    <p>Copy the code below and paste it into your WordPress page/post:</p>
+    
+    <div style="background: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; margin: 20px 0;">
+        <h3>HTML Code to Copy:</h3>
+        <pre style="background: #fff; padding: 15px; border: 1px solid #ccc; overflow-x: auto; font-size: 12px;"><code>&lt;!-- WordPress Test Container --&gt;
+&lt;div style="width: 220px; border: 2px solid #007cba; padding: 15px; margin: 20px auto; background: #f8f9fa; border-radius: 8px;"&gt;
+    &lt;div style="text-align: center; font-weight: bold; color: #007cba; margin-bottom: 10px; font-size: 12px;"&gt;WordPress Test Container (220px)&lt;/div&gt;
+    
+    &lt;!-- Blink Donation Button Container --&gt;
+    &lt;div id="blink-pay-button-container"&gt;&lt;/div&gt;
+    
+    &lt;!-- Debug Info --&gt;
+    &lt;div id="debug-info" style="background: #e9ecef; padding: 8px; margin-top: 10px; font-family: monospace; font-size: 11px; border-radius: 4px; border: 1px solid #dee2e6;"&gt;Loading...&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;!-- Blink Pay Button Script --&gt;
+&lt;script src="https://donation-button.blink.sv/js/blink-pay-button.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+    // Initialize the donation button
+    BlinkPayButton.init({
+        username: 'pretyflaco',
+        containerId: 'blink-pay-button-container',
+        themeMode: 'light',
+        language: 'en',
+        debug: true
+    });
+    
+    // Check widget dimensions after initialization
+    setTimeout(function() {
+        const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
+        const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
+        const debugDiv = document.getElementById('debug-info');
+        
+        if (widget && button) {
+            const widgetWidth = widget.offsetWidth;
+            const buttonWidth = button.offsetWidth;
+            const containerWidth = widget.parentElement.offsetWidth;
+            const widgetCSSVar = getComputedStyle(widget).getPropertyValue('--blink-widget-width');
+            
+            const debugInfo = `Container: ${containerWidth}px | Widget: ${widgetWidth}px | Button: ${buttonWidth}px | CSS Var: ${widgetCSSVar}`;
+            debugDiv.textContent = debugInfo;
+        } else {
+            debugDiv.textContent = 'Widget not found!';
+        }
+    }, 2000);
+&lt;/script&gt;</code></pre>
+    </div>
+    
+    <div class="wordpress-test-container">
+        <div id="blink-pay-button-container"></div>
+        <div id="debug-info" class="debug-info">Loading...</div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        // Initialize the donation button
+        BlinkPayButton.init({
+            username: 'pretyflaco',
+            containerId: 'blink-pay-button-container',
+            themeMode: 'light',
+            language: 'en',
+            debug: true
+        });
+        
+        // Check widget dimensions after initialization
+        setTimeout(function() {
+            const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
+            const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
+            const debugDiv = document.getElementById('debug-info');
+            
+            if (widget && button) {
+                const widgetWidth = widget.offsetWidth;
+                const buttonWidth = button.offsetWidth;
+                const containerWidth = widget.parentElement.offsetWidth;
+                const widgetCSSVar = getComputedStyle(widget).getPropertyValue('--blink-widget-width');
+                
+                const debugInfo = `Container: ${containerWidth}px | Widget: ${widgetWidth}px | Button: ${buttonWidth}px | CSS Var: ${widgetCSSVar}`;
+                debugDiv.textContent = debugInfo;
+            } else {
+                debugDiv.textContent = 'Widget not found!';
+            }
+        }, 2000);
+    </script>
+</body>
+</html> 

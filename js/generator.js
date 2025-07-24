@@ -288,13 +288,37 @@ document.addEventListener('DOMContentLoaded', function() {
         inputGroup.parentElement.insertBefore(validationDiv, inputGroup.nextSibling);
     }
 
+    // Clean username input - strip @blink.sv if user enters full Lightning Address
+    function cleanUsernameInput(input) {
+        let cleaned = input.trim();
+        
+        // If user entered a full Lightning Address (username@blink.sv), strip the domain
+        if (cleaned.includes('@blink.sv')) {
+            cleaned = cleaned.replace('@blink.sv', '').trim();
+        }
+        
+        // Also handle other common Lightning Address formats
+        if (cleaned.includes('@')) {
+            // For any other @domain, just take the username part
+            cleaned = cleaned.split('@')[0].trim();
+        }
+        
+        return cleaned;
+    }
+
     // Generate code based on the username
     async function generateCode() {
-        currentUsername = blinkUsernameInput.value.trim();
+        const rawInput = blinkUsernameInput.value;
+        currentUsername = cleanUsernameInput(rawInput);
         
         if (!currentUsername) {
             alert('Please enter your Blink username');
             return;
+        }
+        
+        // Update the input field with the cleaned username if it was different
+        if (rawInput !== currentUsername) {
+            blinkUsernameInput.value = currentUsername;
         }
         
         // Disable generate button and show loading state
@@ -503,6 +527,23 @@ document.addEventListener('DOMContentLoaded', function() {
     blinkUsernameInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             generateCode();
+        }
+    });
+    
+    // Real-time username cleaning - clean input as user types
+    blinkUsernameInput.addEventListener('input', function(e) {
+        const rawInput = this.value;
+        const cleaned = cleanUsernameInput(rawInput);
+        
+        // Only update if the cleaned version is different and the user has finished typing
+        if (rawInput !== cleaned && rawInput.includes('@')) {
+            // Use a small delay to avoid interfering with user typing
+            clearTimeout(this.cleanupTimeout);
+            this.cleanupTimeout = setTimeout(() => {
+                this.value = cleaned;
+                // Trigger input event to update any other listeners
+                this.dispatchEvent(new Event('input', { bubbles: true }));
+            }, 500); // 500ms delay
         }
     });
     

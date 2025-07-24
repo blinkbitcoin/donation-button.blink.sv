@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Blink Button Responsiveness</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border: 2px solid #ccc;
+        }
+        
+        .small {
+            width: 250px;
+        }
+        
+        .medium {
+            width: 350px;
+        }
+        
+        .large {
+            width: 500px;
+        }
+        
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Test - Blink Button Responsiveness</h1>
+    
+    <div class="test-container small">
+        <h3>Small Container (250px)</h3>
+        <div id="blink-pay-button-container-1"></div>
+        <div class="debug-info" id="debug-1">Loading...</div>
+    </div>
+    
+    <div class="test-container medium">
+        <h3>Medium Container (350px)</h3>
+        <div id="blink-pay-button-container-2"></div>
+        <div class="debug-info" id="debug-2">Loading...</div>
+    </div>
+    
+    <div class="test-container large">
+        <h3>Large Container (500px)</h3>
+        <div id="blink-pay-button-container-3"></div>
+        <div class="debug-info" id="debug-3">Loading...</div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        // Override the log function to capture debug info
+        const originalLog = console.log;
+        const debugLogs = [];
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            debugLogs.push(args.join(' '));
+        };
+        
+        // Initialize widgets with debug info
+        function initWidgets() {
+            if (typeof BlinkPayButton !== 'undefined') {
+                console.log('BlinkPayButton loaded, initializing widgets...');
+                
+                // Small container
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-1',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Medium container
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-2',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Large container
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-3',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Check button states after initialization
+                setTimeout(checkButtonStates, 2000);
+                
+            } else {
+                console.log('BlinkPayButton not loaded yet, retrying...');
+                setTimeout(initWidgets, 100);
+            }
+        }
+        
+        function checkButtonStates() {
+            console.log('Checking button states...');
+            
+            for (let i = 1; i <= 3; i++) {
+                const button = document.querySelector(`#blink-pay-button-container-${i} .blink-pay-button`);
+                const debugDiv = document.getElementById(`debug-${i}`);
+                
+                if (button) {
+                    const widgetContainer = button.closest('.blink-pay-widget');
+                    const containerWidth = widgetContainer ? widgetContainer.offsetWidth : 'unknown';
+                    const buttonWidth = button.offsetWidth;
+                    const maxWidth = button.style.maxWidth || getComputedStyle(button).maxWidth;
+                    const responsiveClass = button.classList.contains('responsive-mobile') ? 'mobile' : 
+                                          button.classList.contains('responsive-tablet') ? 'tablet' : 
+                                          button.classList.contains('responsive-desktop') ? 'desktop' : 'none';
+                    
+                    const debugInfo = `
+Container Width: ${containerWidth}px
+Button Width: ${buttonWidth}px
+Max Width: ${maxWidth}
+Responsive Class: ${responsiveClass}
+CSS Classes: ${button.className}
+                    `.trim();
+                    
+                    debugDiv.textContent = debugInfo;
+                    console.log(`Container ${i}:`, debugInfo);
+                } else {
+                    debugDiv.textContent = 'Button not found!';
+                    console.log(`Container ${i}: Button not found`);
+                }
+            }
+            
+            // Show recent debug logs
+            console.log('Recent debug logs:', debugLogs.slice(-10));
+        }
+        
+        // Initialize when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWidgets);
+        } else {
+            initWidgets();
+        }
+    </script>
+</body>
+</html> 
