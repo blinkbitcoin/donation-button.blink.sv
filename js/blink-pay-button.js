@@ -745,6 +745,12 @@
                     text-align: left !important;
                     overflow: hidden !important;
                 }
+                
+                /* Ensure widget never exceeds its container */
+                .blink-pay-widget {
+                    max-width: 100% !important;
+                    width: min(var(--blink-widget-width, 370px), 100%) !important;
+                }
                 .blink-pay-widget * {
                     box-sizing: border-box !important;
                 }
@@ -2236,7 +2242,8 @@
             if (text === this.t('paymentSuccessful')) {
                 const widgetContainer = button.closest('.blink-pay-widget');
                 if (widgetContainer) {
-                    const containerWidth = widgetContainer.offsetWidth;
+                    const parentContainer = widgetContainer.parentElement;
+                    const containerWidth = parentContainer ? parentContainer.offsetWidth : widgetContainer.offsetWidth;
                     if (containerWidth <= 250) {
                         // Use shorter text for very small containers
                         displayText = 'Payment Successful!';
@@ -2283,7 +2290,9 @@
                 this.log(`adjustButtonResponsiveness: Set widget width CSS variable to ${widgetWidth}px (custom: ${this.buttonWidth}px, container: ${containerWidth}px)`);
             } else {
                 // Use responsive width based on container size
-                if (containerWidth <= 300) {
+                if (containerWidth <= 250) {
+                    widgetWidth = containerWidth; // Use exact container width for very small containers
+                } else if (containerWidth <= 300) {
                     widgetWidth = 280;
                 } else if (containerWidth <= 400) {
                     widgetWidth = 350;
@@ -2300,7 +2309,12 @@
             this.log('adjustButtonResponsiveness: Removed existing responsive classes');
             
             // Apply responsive styles based on container size using CSS classes
-            if (containerWidth <= 300) {
+            if (containerWidth <= 250) {
+                // Very small container - use exact container width
+                button.classList.add('responsive-mobile');
+                button.style.setProperty('max-width', (containerWidth - 40) + 'px', 'important'); // Leave some padding
+                this.log(`adjustButtonResponsiveness: Added responsive-mobile class for very small container ${containerWidth}px`);
+            } else if (containerWidth <= 300) {
                 // Mobile-style button for very small containers
                 button.classList.add('responsive-mobile');
                 this.log('adjustButtonResponsiveness: Added responsive-mobile class');
