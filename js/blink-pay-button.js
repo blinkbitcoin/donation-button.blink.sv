@@ -947,17 +947,33 @@
                     max-width: 250px !important;
                     font-size: 12px !important;
                     padding: 8px 10px !important;
+                    white-space: normal !important;
+                    line-height: 1.3 !important;
+                    min-height: 40px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    text-align: center !important;
                 }
                 
                 .blink-pay-button.responsive-tablet {
                     max-width: 280px !important;
                     font-size: 13px !important;
+                    white-space: normal !important;
+                    line-height: 1.3 !important;
+                    min-height: 38px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    text-align: center !important;
                 }
                 
                 .blink-pay-button.responsive-desktop {
                     max-width: 310px !important;
                     font-size: 14px !important;
                     padding: 10px 12px !important;
+                    white-space: nowrap !important;
+                    line-height: 1.2 !important;
                 }
                 
                 /* Responsive design for different screen sizes */
@@ -966,6 +982,13 @@
                     .${this.buttonClass} {
                         max-width: 280px !important;
                         font-size: 13px !important;
+                        white-space: normal !important;
+                        line-height: 1.3 !important;
+                        min-height: 38px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        text-align: center !important;
                     }
                 }
                 
@@ -975,6 +998,13 @@
                         max-width: 250px !important;
                         font-size: 12px !important;
                         padding: 8px 10px !important;
+                        white-space: normal !important;
+                        line-height: 1.3 !important;
+                        min-height: 40px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        text-align: center !important;
                     }
                 }
                 
@@ -1002,6 +1032,13 @@
                         max-width: 250px !important;
                         font-size: 12px !important;
                         padding: 8px 10px !important;
+                        white-space: normal !important;
+                        line-height: 1.3 !important;
+                        min-height: 40px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        text-align: center !important;
                     }
                 }
                 
@@ -1009,6 +1046,13 @@
                     .blink-pay-widget .${this.buttonClass} {
                         max-width: 280px !important;
                         font-size: 13px !important;
+                        white-space: normal !important;
+                        line-height: 1.3 !important;
+                        min-height: 38px !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        text-align: center !important;
                     }
                 }
                 .blink-pay-widget .${this.buttonClass}.success,
@@ -2183,15 +2227,29 @@
             this.log(`Adjusted font size to ${fontSize}px for text: "${text}"`);
         },
         
-        // Update button text with dynamic font sizing
+        // Update button text with dynamic font sizing and responsive text
         updateButtonText: function(button, text) {
             if (!button || !text) return;
             
-            button.textContent = text;
+            // Check if this is a success message and if we're in a very small container
+            let displayText = text;
+            if (text === this.t('paymentSuccessful')) {
+                const widgetContainer = button.closest('.blink-pay-widget');
+                if (widgetContainer) {
+                    const containerWidth = widgetContainer.offsetWidth;
+                    if (containerWidth <= 250) {
+                        // Use shorter text for very small containers
+                        displayText = 'Payment Successful!';
+                        this.log(`updateButtonText: Using short success message for container width ${containerWidth}px`);
+                    }
+                }
+            }
+            
+            button.textContent = displayText;
             
             // Use a small delay to ensure the button has rendered
             setTimeout(() => {
-                this.adjustButtonFontSize(button, text);
+                this.adjustButtonFontSize(button, displayText);
             }, 10);
         },
         
