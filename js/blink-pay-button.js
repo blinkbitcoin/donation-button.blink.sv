@@ -687,17 +687,29 @@
             const styles = `
                 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap');
                 
-                /* CSS Reset for Blink Pay Widget */
+                /* CSS Variables for theming */
+                .blink-pay-widget {
+                    --blink-bg-color: ${bgColor};
+                    --blink-text-color: ${textColor};
+                    --blink-border-color: ${borderColor};
+                    --blink-input-bg-color: ${inputBgColor};
+                    --blink-secondary-bg-color: ${secondaryBgColor};
+                    --blink-button-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '310px'};
+                    --blink-widget-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '370px'};
+                    --blink-font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                }
+                
+                /* CSS Reset for Blink Pay Widget - only critical resets need !important */
                 .blink-pay-widget, .blink-pay-widget * {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    border: 0 !important;
-                    font-size: 100% !important;
-                    font: inherit !important;
-                    vertical-align: baseline !important;
-                    -webkit-box-sizing: border-box !important;
-                    -moz-box-sizing: border-box !important;
-                    box-sizing: border-box !important;
+                    margin: 0;
+                    padding: 0;
+                    border: 0;
+                    font-size: 100%;
+                    font: inherit;
+                    vertical-align: baseline;
+                    -webkit-box-sizing: border-box;
+                    -moz-box-sizing: border-box;
+                    box-sizing: border-box;
                 }
                 
                 /* Custom widget width support */
@@ -705,74 +717,80 @@
                     --blink-button-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '310px'};
                     --blink-widget-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '370px'};
                 }
+                
                 .blink-pay-widget {
-                    line-height: 1 !important;
+                    line-height: 1;
                 }
+                
                 .blink-pay-widget ol, .blink-pay-widget ul {
-                    list-style: none !important;
+                    list-style: none;
                 }
+                
                 .blink-pay-widget table {
-                    border-collapse: collapse !important;
-                    border-spacing: 0 !important;
+                    border-collapse: collapse;
+                    border-spacing: 0;
                 }
+                
                 .blink-pay-widget input, .blink-pay-widget select {
-                    background: none !important;
-                    border: none !important;
-                    outline: none !important;
-                    -webkit-appearance: none !important;
-                    -moz-appearance: none !important;
-                    appearance: none !important;
+                    background: none;
+                    border: none;
+                    outline: none;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    appearance: none;
                 }
                 
                 .blink-pay-widget {
-                    font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-                    width: var(--blink-widget-width, 370px) !important;
-                    height: 265px !important;
-                    margin: 0 auto !important;
-                    padding: 20px !important;
-                    border-radius: 12px !important;
-                    background-color: ${bgColor} !important;
-                    color: ${textColor} !important;
-                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
-                    border: 1px solid ${borderColor} !important;
-                    position: relative !important;
-                    display: flex !important;
-                    flex-direction: column !important;
-                    box-sizing: border-box !important;
-                    min-width: 280px !important;
-                    max-width: 100% !important;
-                    line-height: normal !important;
-                    text-align: left !important;
-                    overflow: hidden !important;
+                    font-family: var(--blink-font-family);
+                    width: var(--blink-widget-width, 370px);
+                    height: 265px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    border-radius: 12px;
+                    background-color: var(--blink-bg-color);
+                    color: var(--blink-text-color);
+                    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                    border: 1px solid var(--blink-border-color);
+                    position: relative;
+                    display: flex;
+                    flex-direction: column;
+                    box-sizing: border-box;
+                    min-width: 280px;
+                    max-width: 100%;
+                    line-height: normal;
+                    text-align: left;
+                    overflow: hidden;
                 }
                 
                 /* Ensure widget never exceeds its container */
                 .blink-pay-widget {
-                    max-width: 100% !important;
-                    width: min(var(--blink-widget-width, 370px), 100%) !important;
+                    max-width: 100%;
+                    width: min(var(--blink-widget-width, 370px), 100%);
                 }
+                
                 .blink-pay-widget * {
-                    box-sizing: border-box !important;
+                    box-sizing: border-box;
                 }
+                
                 .blink-pay-widget input, 
                 .blink-pay-widget select, 
                 .blink-pay-widget button {
-                    font-family: 'IBM Plex Sans', sans-serif !important;
+                    font-family: var(--blink-font-family);
                 }
                 
                 /* Top third - Header */
                 .blink-pay-header {
-                    display: flex !important;
-                    justify-content: space-between !important;
-                    align-items: center !important;
-                    height: 32px !important; /* Top third */
-                    margin-bottom: 15px !important;
-                    width: 100% !important;
-                    box-sizing: border-box !important;
-                    margin-top: 0 !important;
-                    margin-left: 0 !important;
-                    margin-right: 0 !important;
-                    padding: 0 !important;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    height: 32px; /* Top third */
+                    margin-bottom: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    margin-top: 0;
+                    margin-left: 0;
+                    margin-right: 0;
+                    padding: 0;
                 }
                 .blink-pay-logo {
                     width: 100px;
@@ -784,36 +802,36 @@
                 }
                 .blink-pay-username {
                     font-size: 12px;
-                    color: ${textColor};
+                    color: var(--blink-text-color);
                     opacity: 0.8;
                     text-align: right;
                 }
                 
                 /* Middle third - Content */
                 .blink-pay-content {
-                    height: 140px !important; /* Middle third */
-                    display: flex !important;
-                    flex-direction: column !important;
-                    justify-content: center !important;
-                    align-items: center !important;
-                    gap: 15px !important;
-                    width: 100% !important;
-                    box-sizing: border-box !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
+                    height: 140px; /* Middle third */
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    gap: 15px;
+                    width: 100%;
+                    box-sizing: border-box;
+                    margin: 0;
+                    padding: 0;
                 }
                 .blink-pay-input-group {
-                    width: 100% !important;
-                    display: flex !important;
-                    flex-direction: row !important;
-                    border: 1px solid ${borderColor} !important;
-                    border-radius: 8px !important;
-                    overflow: hidden !important;
-                    background-color: ${inputBgColor} !important;
-                    box-sizing: border-box !important;
-                    margin: 0 !important;
-                    position: relative !important;
-                    align-items: stretch !important;
+                    width: 100%;
+                    display: flex;
+                    flex-direction: row;
+                    border: 1px solid var(--blink-border-color);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    background-color: var(--blink-input-bg-color);
+                    box-sizing: border-box;
+                    margin: 0;
+                    position: relative;
+                    align-items: stretch;
                 }
                 .blink-pay-widget .blink-pay-input-group input,
                 .blink-pay-input-group input[type="number"] {
