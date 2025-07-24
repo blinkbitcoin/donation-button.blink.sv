@@ -725,7 +725,7 @@
                 
                 .blink-pay-widget {
                     font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-                    width: 370px !important;
+                    width: 100% !important;
                     height: 265px !important;
                     margin: 0 auto !important;
                     padding: 20px !important;
@@ -738,8 +738,8 @@
                     display: flex !important;
                     flex-direction: column !important;
                     box-sizing: border-box !important;
-                    min-width: 370px !important;
-                    max-width: 370px !important;
+                    min-width: 280px !important;
+                    max-width: 100% !important;
                     line-height: normal !important;
                     text-align: left !important;
                     overflow: hidden !important;
@@ -2196,39 +2196,58 @@
         
         // Adjust button responsiveness based on container size
         adjustButtonResponsiveness: function(button) {
-            if (!button) return;
+            if (!button) {
+                this.log('adjustButtonResponsiveness: No button provided');
+                return;
+            }
             
-            // Get the container width (the widget container)
+            this.log('adjustButtonResponsiveness: Function called for button:', button);
+            
+            // Get the container width (the parent container that constrains the widget)
             const widgetContainer = button.closest('.blink-pay-widget');
-            if (!widgetContainer) return;
+            if (!widgetContainer) {
+                this.log('adjustButtonResponsiveness: No widget container found');
+                return;
+            }
             
-            const containerWidth = widgetContainer.offsetWidth;
+            // Use the parent container width (the one that actually constrains the widget)
+            const parentContainer = widgetContainer.parentElement;
+            const containerWidth = parentContainer ? parentContainer.offsetWidth : widgetContainer.offsetWidth;
+            this.log(`adjustButtonResponsiveness: Parent container width = ${containerWidth}px, Widget width = ${widgetContainer.offsetWidth}px`);
             
             // Remove any existing responsive classes
             button.classList.remove('responsive-mobile', 'responsive-tablet', 'responsive-desktop');
+            this.log('adjustButtonResponsiveness: Removed existing responsive classes');
             
             // Apply responsive styles based on container size using CSS classes
             if (containerWidth <= 300) {
                 // Mobile-style button for very small containers
                 button.classList.add('responsive-mobile');
+                this.log('adjustButtonResponsiveness: Added responsive-mobile class');
                 if (this.buttonWidth) {
                     button.style.setProperty('max-width', this.buttonWidth + 'px', 'important');
+                    this.log(`adjustButtonResponsiveness: Set custom max-width to ${this.buttonWidth}px`);
                 }
             } else if (containerWidth <= 400) {
                 // Tablet-style button for small containers
                 button.classList.add('responsive-tablet');
+                this.log('adjustButtonResponsiveness: Added responsive-tablet class');
                 if (this.buttonWidth) {
                     button.style.setProperty('max-width', this.buttonWidth + 'px', 'important');
+                    this.log(`adjustButtonResponsiveness: Set custom max-width to ${this.buttonWidth}px`);
                 }
             } else {
                 // Desktop-style button for larger containers
                 button.classList.add('responsive-desktop');
+                this.log('adjustButtonResponsiveness: Added responsive-desktop class');
                 if (this.buttonWidth) {
                     button.style.setProperty('max-width', this.buttonWidth + 'px', 'important');
+                    this.log(`adjustButtonResponsiveness: Set custom max-width to ${this.buttonWidth}px`);
                 }
             }
             
-            this.log(`Container width: ${containerWidth}px, Applied responsive class: ${button.className}`);
+            this.log(`adjustButtonResponsiveness: Final button classes: ${button.className}`);
+            this.log(`adjustButtonResponsiveness: Final button max-width: ${getComputedStyle(button).maxWidth}`);
         },
         
         // Set up resize observer for dynamic container size changes
@@ -2238,6 +2257,9 @@
             const widgetContainer = button.closest('.blink-pay-widget');
             if (!widgetContainer) return;
             
+            // Watch both the widget container and its parent
+            const parentContainer = widgetContainer.parentElement;
+            
             const resizeObserver = new ResizeObserver(entries => {
                 for (let entry of entries) {
                     this.adjustButtonResponsiveness(button);
@@ -2245,6 +2267,9 @@
             });
             
             resizeObserver.observe(widgetContainer);
+            if (parentContainer) {
+                resizeObserver.observe(parentContainer);
+            }
             this.log('Resize observer set up for dynamic container size changes');
         },
         
