@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink Donation Button - Responsive Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .test-section p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .button-container {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin: 10px 0;
+            text-align: center;
+            background: #fafafa;
+        }
+        
+        .small-container {
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .medium-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .large-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .custom-width-container {
+            width: 310px;
+            margin: 0 auto;
+        }
+        
+        .elementor-style {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .mobile-preview {
+            max-width: 375px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            border-radius: 20px;
+            padding: 20px;
+            background: white;
+        }
+        
+        .tablet-preview {
+            max-width: 768px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+        }
+        
+        .desktop-preview {
+            max-width: 1200px;
+            margin: 0 auto;
+            border: 2px solid #333;
+            border-radius: 5px;
+            padding: 20px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Blink Donation Button - Responsive Test</h1>
+        <p>This page demonstrates the responsive behavior of the Blink donation button in different container sizes and scenarios.</p>
+        
+        <div class="test-section">
+            <h2>1. Default Responsive Button</h2>
+            <p>The button automatically adjusts to its container width with a maximum of 310px on desktop.</p>
+            <div class="button-container">
+                <div id="blink-pay-button-container-1"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Custom Width Button (310px)</h2>
+            <p>Button with custom width set to 310px as requested by the web designer.</p>
+            <div class="button-container">
+                <div id="blink-pay-button-container-2"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Small Container Test</h2>
+            <p>Button in a small container (300px max-width).</p>
+            <div class="button-container small-container">
+                <div id="blink-pay-button-container-3"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Medium Container Test</h2>
+            <p>Button in a medium container (500px max-width).</p>
+            <div class="button-container medium-container">
+                <div id="blink-pay-button-container-4"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>5. Large Container Test</h2>
+            <p>Button in a large container (800px max-width).</p>
+            <div class="button-container large-container">
+                <div id="blink-pay-button-container-5"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>6. Elementor Container Simulation</h2>
+            <p>Simulating an Elementor container environment.</p>
+            <div class="button-container elementor-style">
+                <div id="blink-pay-button-container-6"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>7. Mobile Device Preview</h2>
+            <p>How the button looks on mobile devices (375px width).</p>
+            <div class="mobile-preview">
+                <div id="blink-pay-button-container-7"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>8. Tablet Device Preview</h2>
+            <p>How the button looks on tablet devices (768px width).</p>
+            <div class="tablet-preview">
+                <div id="blink-pay-button-container-8"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>9. Desktop Device Preview</h2>
+            <p>How the button looks on desktop devices (1200px width).</p>
+            <div class="desktop-preview">
+                <div id="blink-pay-button-container-9"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blink Pay Button script -->
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        // Initialize multiple widgets with different configurations
+        function initWidgets() {
+            if (typeof BlinkPayButton !== 'undefined') {
+                // Default responsive button
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-1',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Custom width button (310px)
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-2',
+                    themeMode: 'light',
+                    language: 'en',
+                    buttonWidth: 310,
+                    debug: false
+                });
+                
+                // Small container test
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-3',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Medium container test
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-4',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Large container test
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-5',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Elementor container simulation
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-6',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Mobile preview
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-7',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Tablet preview
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-8',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Desktop preview
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-9',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+            } else {
+                // Try again in 100ms if BlinkPayButton isn't loaded yet
+                setTimeout(initWidgets, 100);
+            }
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWidgets);
+        } else {
+            initWidgets();
+        }
+    </script>
+</body>
+</html> 

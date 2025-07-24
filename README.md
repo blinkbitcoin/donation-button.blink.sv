@@ -70,6 +70,7 @@ Your widget is now live and ready to receive Bitcoin Lightning donations!
 | `buttonText` | string | `'Donate Bitcoin'` | Text displayed on the button |
 | `themeMode` | string | `'light'` | Theme: `'light'` or `'dark'` |
 | `defaultAmount` | number | `1000` | Default amount in sats |
+| `buttonWidth` | number | `null` | Custom button width in pixels (200-500px) |
 | `supportedCurrencies` | array | `[sats, USD]` | Array of currency objects |
 | `debug` | boolean | `false` | Enable console logging |
 
@@ -105,9 +106,33 @@ The widget includes built-in analytics tracking when users click the Blink logo.
 
 **Privacy:** Only publicly available information is tracked. Website owners can modify or remove analytics if desired. See [ANALYTICS-README.md](ANALYTICS-README.md) for full details.
 
-## 🎨 Styling
+## 🎨 Styling & Responsive Design
 
-The widget automatically adapts to light/dark themes and is fully responsive. You can customize the appearance with CSS:
+The widget automatically adapts to light/dark themes and is fully responsive. The donation button is designed to work seamlessly in various container sizes and environments, including Elementor containers.
+
+### Responsive Features
+
+- **Desktop**: Maximum width of 310px (or custom width if specified)
+- **Tablet (≤768px)**: Maximum width of 280px with slightly smaller font
+- **Mobile (≤480px)**: Maximum width of 250px with optimized padding and font size
+- **Elementor Compatibility**: Automatically adapts to Elementor widget containers
+
+### Custom Button Width
+
+You can set a custom button width for specific use cases:
+
+```javascript
+BlinkPayButton.init({
+  username: 'yourusername',
+  containerId: 'blink-pay-button-container',
+  buttonWidth: 310, // Custom width in pixels (200-500px range)
+  // ... other options
+});
+```
+
+### CSS Customization
+
+You can customize the appearance with CSS:
 
 ```css
 /* Custom styling example */
@@ -119,6 +144,11 @@ The widget automatically adapts to light/dark themes and is fully responsive. Yo
 /* Override button colors */
 .blink-pay-button {
   background: your-custom-color !important;
+}
+
+/* Custom button width using CSS custom properties */
+.blink-pay-widget[data-button-width] .blink-pay-button {
+  max-width: var(--blink-button-width, 310px) !important;
 }
 ```
 

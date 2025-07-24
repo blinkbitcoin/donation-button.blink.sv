@@ -600,6 +600,7 @@
             this.themeColor = config.themeColor || '#FB5607'; // Sunset Orange as default
             this.minAmount = config.minAmount || 1;
             this.defaultAmount = config.defaultAmount || 1000;
+            this.buttonWidth = config.buttonWidth || null; // Custom button width in pixels
             this.container = document.getElementById(this.containerId);
             this.debug = config.debug || false;
             this.logs = [];
@@ -697,6 +698,11 @@
                     -webkit-box-sizing: border-box !important;
                     -moz-box-sizing: border-box !important;
                     box-sizing: border-box !important;
+                }
+                
+                /* Custom button width support */
+                .blink-pay-widget[data-button-width] {
+                    --blink-button-width: ${this.buttonWidth ? this.buttonWidth + 'px' : '310px'};
                 }
                 .blink-pay-widget {
                     line-height: 1 !important;
@@ -904,6 +910,7 @@
                 .blink-pay-widget .${this.buttonClass},
                 .${this.buttonClass} {
                     width: 100% !important;
+                    max-width: 310px !important;
                     padding: 10px 12px !important;
                     background: ${colors.gradient} !important;
                     color: white !important;
@@ -927,11 +934,42 @@
                     justify-content: center !important;
                     box-sizing: border-box !important;
                     margin-top: 0 !important;
-                    margin-left: 0 !important;
-                    margin-right: 0 !important;
+                    margin-left: auto !important;
+                    margin-right: auto !important;
                     -webkit-appearance: none !important;
                     -moz-appearance: none !important;
                     appearance: none !important;
+                }
+                
+                /* Responsive design for different screen sizes */
+                @media (max-width: 768px) {
+                    .blink-pay-widget .${this.buttonClass},
+                    .${this.buttonClass} {
+                        max-width: 280px !important;
+                        font-size: 13px !important;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .blink-pay-widget .${this.buttonClass},
+                    .${this.buttonClass} {
+                        max-width: 250px !important;
+                        font-size: 12px !important;
+                        padding: 8px 10px !important;
+                    }
+                }
+                
+                /* Elementor container compatibility */
+                .elementor-widget-container .blink-pay-widget .${this.buttonClass},
+                .elementor-widget-container .${this.buttonClass} {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                }
+                
+                /* Allow custom width override via CSS custom properties */
+                .blink-pay-widget[data-button-width] .${this.buttonClass},
+                [data-button-width] .${this.buttonClass} {
+                    max-width: var(--blink-button-width, 310px) !important;
                 }
                 .blink-pay-widget .${this.buttonClass}.success,
                 .${this.buttonClass}.success {
@@ -989,7 +1027,7 @@
             const analyticsUrl = this.buildBlinkAnalyticsUrl();
             
             const html = `
-                <div class="blink-pay-widget">
+                <div class="blink-pay-widget"${this.buttonWidth ? ` data-button-width="${this.buttonWidth}"` : ''}>
                     <!-- Top third -->
                     <div class="blink-pay-header">
                         <a href="${analyticsUrl}" target="_blank" rel="noopener noreferrer">

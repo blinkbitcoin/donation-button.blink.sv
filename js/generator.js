@@ -13,11 +13,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const currencyInput = document.getElementById('currencyInput');
     const currencyValidation = document.getElementById('currencyValidation');
     const languageSelect = document.getElementById('languageSelect');
+    const buttonWidthInput = document.getElementById('buttonWidth');
     
     let currentWidgetTheme = 'light';
     let currentUsername = '';
     let selectedCurrencies = ['USD']; // Default to USD + sats (sats is always included)
     let selectedLanguage = 'en'; // Default language
+    let currentButtonWidth = null; // Custom button width in pixels
     
     // Common currencies that are well-supported by most APIs
     const popularCurrencies = [
@@ -285,7 +287,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const inputGroup = blinkUsernameInput.parentElement;
         inputGroup.parentElement.insertBefore(validationDiv, inputGroup.nextSibling);
     }
-    
+
     // Generate code based on the username
     async function generateCode() {
         currentUsername = blinkUsernameInput.value.trim();
@@ -314,22 +316,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Username exists - show success message
             showUsernameValidation('✓ Blink username found!', false);
-            
-            // Update selected currencies
-            updateSelectedCurrencies();
-            validateCurrencies();
-            
-            // Show the result container
-            resultContainer.style.display = 'block';
-            
-            // Update generated code and preview
-            updateGeneratedCode();
-            updateWidgetPreview();
-            
-            // Scroll to the results
-            setTimeout(() => {
-                resultContainer.scrollIntoView({ behavior: 'smooth' });
-            }, 300);
+        
+        // Update selected currencies
+        updateSelectedCurrencies();
+        validateCurrencies();
+        
+        // Show the result container
+        resultContainer.style.display = 'block';
+        
+        // Update generated code and preview
+        updateGeneratedCode();
+        updateWidgetPreview();
+        
+        // Scroll to the results
+        setTimeout(() => {
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
+        }, 300);
             
         } catch (error) {
             console.error('Error during code generation:', error);
@@ -351,6 +353,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const currencyConfig = generateCurrencyConfig();
         const currencyConfigString = JSON.stringify(currencyConfig, null, 8).replace(/\n/g, '\n        ');
         
+        // Generate button width configuration
+        const buttonWidthConfig = currentButtonWidth ? `\n        buttonWidth: ${currentButtonWidth},` : '';
+        
         // Generate the HTML code for embedding with the domain
         const generatedCode = `<!-- Blink Pay Button widget -->
 <div id="blink-pay-button-container"></div>
@@ -366,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
         containerId: 'blink-pay-button-container',
         themeMode: '${currentWidgetTheme}',
         language: '${selectedLanguage}',
-        defaultAmount: 1000,
+        defaultAmount: 1000,${buttonWidthConfig}
         supportedCurrencies: ${currencyConfigString},
         debug: false
       });
@@ -405,6 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     themeMode: currentWidgetTheme,
                     language: selectedLanguage,
                     defaultAmount: 1000,
+                    buttonWidth: currentButtonWidth,
                     supportedCurrencies: currencyConfig,
                     debug: false
                 });
@@ -426,6 +432,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         themeMode: currentWidgetTheme,
                         language: selectedLanguage,
                         defaultAmount: 1000,
+                        buttonWidth: currentButtonWidth,
                         supportedCurrencies: currencyConfig,
                         debug: false
                     });
@@ -467,5 +474,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Enter') {
             generateCode();
         }
+    });
+    
+    // Button width input event listener
+    buttonWidthInput.addEventListener('input', function() {
+        const value = parseInt(this.value);
+        currentButtonWidth = value && value >= 200 && value <= 500 ? value : null;
+        updateWidgetPreview();
     });
 }); 
