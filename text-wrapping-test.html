@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Wrapping Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .widget-container {
+            border: 2px solid #007cba;
+            padding: 15px;
+            margin: 10px 0;
+            text-align: center;
+            background: #fafafa;
+        }
+        
+        .widget-container::before {
+            content: attr(data-width) " Container";
+            display: block;
+            text-align: center;
+            font-weight: bold;
+            color: #007cba;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .debug-info {
+            background: #e9ecef;
+            padding: 8px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Text Wrapping Test</h1>
+    
+    <div class="instructions">
+        <h3>Test Instructions:</h3>
+        <ol>
+            <li>Click "Donate" on each widget to trigger the payment flow</li>
+            <li>Click "Pay in Wallet" to simulate a successful payment</li>
+            <li>Observe how the success message text wraps in different container sizes</li>
+            <li>Check that the 220px container shows the shorter "Payment Successful!" message</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>Very Small Container (220px)</h2>
+        <div class="widget-container" style="width: 220px;" data-width="220px">
+            <div id="blink-pay-button-container-1"></div>
+        </div>
+        <div class="debug-info" id="debug-1">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Small Container (280px)</h2>
+        <div class="widget-container" style="width: 280px;" data-width="280px">
+            <div id="blink-pay-button-container-2"></div>
+        </div>
+        <div class="debug-info" id="debug-2">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Medium Container (320px)</h2>
+        <div class="widget-container" style="width: 320px;" data-width="320px">
+            <div id="blink-pay-button-container-3"></div>
+        </div>
+        <div class="debug-info" id="debug-3">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Large Container (370px)</h2>
+        <div class="widget-container" style="width: 370px;" data-width="370px">
+            <div id="blink-pay-button-container-4"></div>
+        </div>
+        <div class="debug-info" id="debug-4">Loading...</div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        function initWidgets() {
+            if (typeof BlinkPayButton !== 'undefined') {
+                console.log('Initializing widgets...');
+                
+                // Very small container (220px)
+                BlinkPayButton.init({
+                    username: 'pretyflaco',
+                    containerId: 'blink-pay-button-container-1',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Small container (280px)
+                BlinkPayButton.init({
+                    username: 'pretyflaco',
+                    containerId: 'blink-pay-button-container-2',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Medium container (320px)
+                BlinkPayButton.init({
+                    username: 'pretyflaco',
+                    containerId: 'blink-pay-button-container-3',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Large container (370px)
+                BlinkPayButton.init({
+                    username: 'pretyflaco',
+                    containerId: 'blink-pay-button-container-4',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Check widget dimensions after initialization
+                setTimeout(checkWidgetDimensions, 2000);
+                
+            } else {
+                console.log('BlinkPayButton not loaded yet, retrying...');
+                setTimeout(initWidgets, 100);
+            }
+        }
+        
+        function checkWidgetDimensions() {
+            console.log('Checking widget dimensions...');
+            
+            for (let i = 1; i <= 4; i++) {
+                const widget = document.querySelector(`#blink-pay-button-container-${i} .blink-pay-widget`);
+                const button = document.querySelector(`#blink-pay-button-container-${i} .blink-pay-button`);
+                const debugDiv = document.getElementById(`debug-${i}`);
+                
+                if (widget && button) {
+                    const widgetWidth = widget.offsetWidth;
+                    const buttonWidth = button.offsetWidth;
+                    const buttonText = button.textContent;
+                    const buttonHeight = button.offsetHeight;
+                    const whiteSpace = getComputedStyle(button).whiteSpace;
+                    const lineHeight = getComputedStyle(button).lineHeight;
+                    
+                    const debugInfo = `
+Widget: ${widgetWidth}px | Button: ${buttonWidth}px x ${buttonHeight}px
+Text: "${buttonText}"
+CSS: white-space: ${whiteSpace} | line-height: ${lineHeight}
+                    `.trim();
+                    
+                    debugDiv.textContent = debugInfo;
+                    console.log(`Widget ${i}:`, debugInfo);
+                } else {
+                    debugDiv.textContent = 'Widget not found!';
+                    console.log(`Widget ${i}: Widget not found`);
+                }
+            }
+        }
+        
+        // Initialize when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWidgets);
+        } else {
+            initWidgets();
+        }
+    </script>
+</body>
+</html> 
