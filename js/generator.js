@@ -398,6 +398,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Clear previous preview completely
         widgetPreview.innerHTML = '<div id="blink-pay-button-container"></div>';
         
+        // Add debug info
+        const debugInfo = document.createElement('div');
+        debugInfo.style.cssText = 'font-size: 12px; color: #666; text-align: center; margin-top: 10px; font-family: monospace;';
+        debugInfo.textContent = `Button Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (310px max)'}`;
+        widgetPreview.appendChild(debugInfo);
+        
         // Check if BlinkPayButton is already loaded
         if (window.BlinkPayButton) {
             // Force a new widget initialization with delay
@@ -412,8 +418,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     defaultAmount: 1000,
                     buttonWidth: currentButtonWidth,
                     supportedCurrencies: currencyConfig,
-                    debug: false
+                    debug: true
                 });
+                
+                // Update debug info after initialization
+                setTimeout(() => {
+                    const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
+                    if (button) {
+                        const actualWidth = button.offsetWidth;
+                        const maxWidth = getComputedStyle(button).maxWidth;
+                        debugInfo.textContent = `Button Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (310px max)'} | Actual: ${actualWidth}px | Max-width: ${maxWidth}`;
+                    }
+                }, 1000);
             }, 50);
         } else {
             // Load the widget script dynamically for the preview
@@ -434,8 +450,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         defaultAmount: 1000,
                         buttonWidth: currentButtonWidth,
                         supportedCurrencies: currencyConfig,
-                        debug: false
+                        debug: true
                     });
+                    
+                    // Update debug info after initialization
+                    setTimeout(() => {
+                        const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
+                        if (button) {
+                            const actualWidth = button.offsetWidth;
+                            const maxWidth = getComputedStyle(button).maxWidth;
+                            debugInfo.textContent = `Button Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (310px max)'} | Actual: ${actualWidth}px | Max-width: ${maxWidth}`;
+                        }
+                    }, 1000);
                 }, 50);
             };
         }

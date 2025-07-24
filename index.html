@@ -219,6 +219,20 @@
             border-radius: 12px;
             padding: 20px;
             transition: background-color 0.3s, border-color 0.3s;
+            max-width: 400px;
+            margin: 0 auto;
+            border: 2px dashed #ccc;
+            background-color: #fafafa;
+        }
+        
+        #widget-preview::before {
+            content: "Preview Container (400px max-width)";
+            display: block;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            font-family: monospace;
         }
         
         .light-mode #widget-preview {
