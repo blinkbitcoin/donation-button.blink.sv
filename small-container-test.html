@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Small Container Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            width: 220px;
+            border: 3px solid #007cba;
+            padding: 15px;
+            margin: 20px auto;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+        
+        .test-container::before {
+            content: "220px Container Test";
+            display: block;
+            text-align: center;
+            font-weight: bold;
+            color: #007cba;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .debug-info {
+            background: #e9ecef;
+            padding: 10px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">Small Container Test</h1>
+    
+    <div class="instructions">
+        <h3>Test Instructions:</h3>
+        <ol>
+            <li>Click "Donate" to start the payment flow</li>
+            <li>Click "Pay in Wallet" to simulate a successful payment</li>
+            <li>Check that the success message "Payment Successful!" fits properly</li>
+            <li>Verify the widget width matches the container width (220px)</li>
+        </ol>
+    </div>
+    
+    <div class="test-container">
+        <div id="blink-pay-button-container"></div>
+        <div class="debug-info" id="debug-info">Loading...</div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        function initWidget() {
+            if (typeof BlinkPayButton !== 'undefined') {
+                console.log('Initializing widget...');
+                
+                BlinkPayButton.init({
+                    username: 'pretyflaco',
+                    containerId: 'blink-pay-button-container',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Check dimensions after initialization
+                setTimeout(checkDimensions, 2000);
+                
+            } else {
+                console.log('BlinkPayButton not loaded yet, retrying...');
+                setTimeout(initWidget, 100);
+            }
+        }
+        
+        function checkDimensions() {
+            const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
+            const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
+            const container = document.querySelector('.test-container');
+            const debugDiv = document.getElementById('debug-info');
+            
+            if (widget && button && container) {
+                const containerWidth = container.offsetWidth;
+                const widgetWidth = widget.offsetWidth;
+                const buttonWidth = button.offsetWidth;
+                const buttonText = button.textContent;
+                const widgetCSSVar = getComputedStyle(widget).getPropertyValue('--blink-widget-width');
+                
+                const debugInfo = `
+Container: ${containerWidth}px
+Widget: ${widgetWidth}px (CSS Var: ${widgetCSSVar})
+Button: ${buttonWidth}px
+Button Text: "${buttonText}"
+Status: ${widgetWidth <= containerWidth ? '✅ FITS' : '❌ OVERFLOWS'}
+                `.trim();
+                
+                debugDiv.textContent = debugInfo;
+                console.log('Dimensions:', debugInfo);
+            } else {
+                debugDiv.textContent = 'Widget not found!';
+            }
+        }
+        
+        // Initialize when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWidget);
+        } else {
+            initWidget();
+        }
+    </script>
+</body>
+</html> 
