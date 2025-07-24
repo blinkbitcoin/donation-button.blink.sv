@@ -44,17 +44,17 @@
         }
         
         .small-container {
-            max-width: 300px;
+            width: 300px;
             margin: 0 auto;
         }
         
         .medium-container {
-            max-width: 500px;
+            width: 500px;
             margin: 0 auto;
         }
         
         .large-container {
-            max-width: 800px;
+            width: 800px;
             margin: 0 auto;
         }
         
@@ -70,7 +70,7 @@
         }
         
         .mobile-preview {
-            max-width: 375px;
+            width: 375px;
             margin: 0 auto;
             border: 2px solid #333;
             border-radius: 20px;
@@ -79,7 +79,7 @@
         }
         
         .tablet-preview {
-            max-width: 768px;
+            width: 768px;
             margin: 0 auto;
             border: 2px solid #333;
             border-radius: 10px;
@@ -88,7 +88,7 @@
         }
         
         .desktop-preview {
-            max-width: 1200px;
+            width: 1200px;
             margin: 0 auto;
             border: 2px solid #333;
             border-radius: 5px;
@@ -107,6 +107,7 @@
             <p>The button automatically adjusts to its container width with a maximum of 310px on desktop.</p>
             <div class="button-container">
                 <div id="blink-pay-button-container-1"></div>
+                <div id="button-info-1" style="margin-top: 10px; font-size: 12px; color: #666;"></div>
             </div>
         </div>
         
@@ -119,10 +120,30 @@
         </div>
         
         <div class="test-section">
+            <h2>2a. Comparison: Default vs Custom Width</h2>
+            <p>Compare default responsive button vs custom 310px button in the same container.</p>
+            <div class="button-container" style="width: 400px; margin: 0 auto;">
+                <h4>Default Responsive Button:</h4>
+                <div id="blink-pay-button-container-2b"></div>
+                <br>
+                <h4>Custom 310px Button:</h4>
+                <div id="blink-pay-button-container-2c"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
             <h2>3. Small Container Test</h2>
-            <p>Button in a small container (300px max-width).</p>
+            <p>Button in a small container (300px width).</p>
             <div class="button-container small-container">
                 <div id="blink-pay-button-container-3"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3a. Very Small Container Test</h2>
+            <p>Button in a very small container (250px width) - should show mobile responsive behavior.</p>
+            <div class="button-container" style="width: 250px; margin: 0 auto;">
+                <div id="blink-pay-button-container-3a"></div>
             </div>
         </div>
         
@@ -190,6 +211,17 @@
                     debug: false
                 });
                 
+                // Show button dimensions after initialization
+                setTimeout(() => {
+                    const button = document.querySelector('#blink-pay-button-container-1 .blink-pay-button');
+                    const info = document.getElementById('button-info-1');
+                    if (button && info) {
+                        const widgetContainer = button.closest('.blink-pay-widget');
+                        const containerWidth = widgetContainer ? widgetContainer.offsetWidth : 'unknown';
+                        info.textContent = `Button width: ${button.offsetWidth}px, Container width: ${containerWidth}px, Max-width: ${button.style.maxWidth || 'default'}`;
+                    }
+                }, 1000);
+                
                 // Custom width button (310px)
                 BlinkPayButton.init({
                     username: 'demo',
@@ -200,10 +232,38 @@
                     debug: false
                 });
                 
+                // Comparison: Default responsive button
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-2b',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Comparison: Custom 310px button
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-2c',
+                    themeMode: 'light',
+                    language: 'en',
+                    buttonWidth: 310,
+                    debug: false
+                });
+                
                 // Small container test
                 BlinkPayButton.init({
                     username: 'demo',
                     containerId: 'blink-pay-button-container-3',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: false
+                });
+                
+                // Very small container test
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-3a',
                     themeMode: 'light',
                     language: 'en',
                     debug: false

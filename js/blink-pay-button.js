@@ -971,6 +971,27 @@
                 [data-button-width] .${this.buttonClass} {
                     max-width: var(--blink-button-width, 310px) !important;
                 }
+                
+                /* Container-based responsive behavior */
+                /* For containers smaller than 300px, use mobile-style button */
+                .blink-pay-widget:has(.${this.buttonClass}) {
+                    container-type: inline-size;
+                }
+                
+                @container (max-width: 300px) {
+                    .blink-pay-widget .${this.buttonClass} {
+                        max-width: 250px !important;
+                        font-size: 12px !important;
+                        padding: 8px 10px !important;
+                    }
+                }
+                
+                @container (max-width: 400px) {
+                    .blink-pay-widget .${this.buttonClass} {
+                        max-width: 280px !important;
+                        font-size: 13px !important;
+                    }
+                }
                 .blink-pay-widget .${this.buttonClass}.success,
                 .${this.buttonClass}.success {
                     background: #00a700 !important;
@@ -1072,6 +1093,10 @@
                 const initialButton = document.getElementById('blink-pay-button');
                 if (initialButton) {
                     this.adjustButtonFontSize(initialButton, this.buttonText);
+                    this.adjustButtonResponsiveness(initialButton);
+                    
+                    // Set up resize observer for dynamic container size changes
+                    this.setupResizeObserver(initialButton);
                 }
             }, 10);
         },
@@ -2149,6 +2174,53 @@
             setTimeout(() => {
                 this.adjustButtonFontSize(button, text);
             }, 10);
+        },
+        
+        // Adjust button responsiveness based on container size
+        adjustButtonResponsiveness: function(button) {
+            if (!button) return;
+            
+            // Get the container width (the widget container)
+            const widgetContainer = button.closest('.blink-pay-widget');
+            if (!widgetContainer) return;
+            
+            const containerWidth = widgetContainer.offsetWidth;
+            
+            // Apply responsive styles based on container size
+            if (containerWidth <= 300) {
+                // Mobile-style button for very small containers
+                button.style.maxWidth = '250px';
+                button.style.fontSize = '12px';
+                button.style.padding = '8px 10px';
+            } else if (containerWidth <= 400) {
+                // Tablet-style button for small containers
+                button.style.maxWidth = '280px';
+                button.style.fontSize = '13px';
+            } else {
+                // Desktop-style button for larger containers
+                button.style.maxWidth = this.buttonWidth ? this.buttonWidth + 'px' : '310px';
+                button.style.fontSize = '14px';
+                button.style.padding = '10px 12px';
+            }
+            
+            this.log(`Container width: ${containerWidth}px, Applied max-width: ${button.style.maxWidth}`);
+        },
+        
+        // Set up resize observer for dynamic container size changes
+        setupResizeObserver: function(button) {
+            if (!button || !window.ResizeObserver) return;
+            
+            const widgetContainer = button.closest('.blink-pay-widget');
+            if (!widgetContainer) return;
+            
+            const resizeObserver = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    this.adjustButtonResponsiveness(button);
+                }
+            });
+            
+            resizeObserver.observe(widgetContainer);
+            this.log('Resize observer set up for dynamic container size changes');
         },
         
         // Build analytics tracking URL for Blink logo
