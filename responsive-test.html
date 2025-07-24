@@ -218,7 +218,10 @@
                     if (button && info) {
                         const widgetContainer = button.closest('.blink-pay-widget');
                         const containerWidth = widgetContainer ? widgetContainer.offsetWidth : 'unknown';
-                        info.textContent = `Button width: ${button.offsetWidth}px, Container width: ${containerWidth}px, Max-width: ${button.style.maxWidth || 'default'}`;
+                        const responsiveClass = button.classList.contains('responsive-mobile') ? 'mobile' : 
+                                              button.classList.contains('responsive-tablet') ? 'tablet' : 
+                                              button.classList.contains('responsive-desktop') ? 'desktop' : 'none';
+                        info.textContent = `Button width: ${button.offsetWidth}px, Container width: ${containerWidth}px, Responsive class: ${responsiveClass}`;
                     }
                 }, 1000);
                 

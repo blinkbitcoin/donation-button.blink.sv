@@ -941,6 +941,24 @@
                     appearance: none !important;
                 }
                 
+                /* Additional responsive override classes for JavaScript control */
+                .blink-pay-button.responsive-mobile {
+                    max-width: 250px !important;
+                    font-size: 12px !important;
+                    padding: 8px 10px !important;
+                }
+                
+                .blink-pay-button.responsive-tablet {
+                    max-width: 280px !important;
+                    font-size: 13px !important;
+                }
+                
+                .blink-pay-button.responsive-desktop {
+                    max-width: 310px !important;
+                    font-size: 14px !important;
+                    padding: 10px 12px !important;
+                }
+                
                 /* Responsive design for different screen sizes */
                 @media (max-width: 768px) {
                     .blink-pay-widget .${this.buttonClass},
@@ -2186,24 +2204,31 @@
             
             const containerWidth = widgetContainer.offsetWidth;
             
-            // Apply responsive styles based on container size
+            // Remove any existing responsive classes
+            button.classList.remove('responsive-mobile', 'responsive-tablet', 'responsive-desktop');
+            
+            // Apply responsive styles based on container size using CSS classes
             if (containerWidth <= 300) {
                 // Mobile-style button for very small containers
-                button.style.maxWidth = '250px';
-                button.style.fontSize = '12px';
-                button.style.padding = '8px 10px';
+                button.classList.add('responsive-mobile');
+                if (this.buttonWidth) {
+                    button.style.setProperty('max-width', this.buttonWidth + 'px', 'important');
+                }
             } else if (containerWidth <= 400) {
                 // Tablet-style button for small containers
-                button.style.maxWidth = '280px';
-                button.style.fontSize = '13px';
+                button.classList.add('responsive-tablet');
+                if (this.buttonWidth) {
+                    button.style.setProperty('max-width', this.buttonWidth + 'px', 'important');
+                }
             } else {
                 // Desktop-style button for larger containers
-                button.style.maxWidth = this.buttonWidth ? this.buttonWidth + 'px' : '310px';
-                button.style.fontSize = '14px';
-                button.style.padding = '10px 12px';
+                button.classList.add('responsive-desktop');
+                if (this.buttonWidth) {
+                    button.style.setProperty('max-width', this.buttonWidth + 'px', 'important');
+                }
             }
             
-            this.log(`Container width: ${containerWidth}px, Applied max-width: ${button.style.maxWidth}`);
+            this.log(`Container width: ${containerWidth}px, Applied responsive class: ${button.className}`);
         },
         
         // Set up resize observer for dynamic container size changes
