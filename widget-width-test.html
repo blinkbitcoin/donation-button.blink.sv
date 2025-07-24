@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget Width Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h2 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .widget-container {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin: 10px 0;
+            text-align: center;
+            background: #fafafa;
+        }
+        
+        .debug-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Widget Width Test</h1>
+    
+    <div class="test-section">
+        <h2>Default Widget (No custom width)</h2>
+        <div class="widget-container">
+            <div id="blink-pay-button-container-1"></div>
+        </div>
+        <div class="debug-info" id="debug-1">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Custom Width Widget (310px)</h2>
+        <div class="widget-container">
+            <div id="blink-pay-button-container-2"></div>
+        </div>
+        <div class="debug-info" id="debug-2">Loading...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Custom Width Widget (250px)</h2>
+        <div class="widget-container">
+            <div id="blink-pay-button-container-3"></div>
+        </div>
+        <div class="debug-info" id="debug-3">Loading...</div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        function initWidgets() {
+            if (typeof BlinkPayButton !== 'undefined') {
+                console.log('Initializing widgets...');
+                
+                // Default widget
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-1',
+                    themeMode: 'light',
+                    language: 'en',
+                    debug: true
+                });
+                
+                // Custom 310px widget
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-2',
+                    themeMode: 'light',
+                    language: 'en',
+                    buttonWidth: 310,
+                    debug: true
+                });
+                
+                // Custom 250px widget
+                BlinkPayButton.init({
+                    username: 'demo',
+                    containerId: 'blink-pay-button-container-3',
+                    themeMode: 'light',
+                    language: 'en',
+                    buttonWidth: 250,
+                    debug: true
+                });
+                
+                // Check widget dimensions after initialization
+                setTimeout(checkWidgetDimensions, 2000);
+                
+            } else {
+                console.log('BlinkPayButton not loaded yet, retrying...');
+                setTimeout(initWidgets, 100);
+            }
+        }
+        
+        function checkWidgetDimensions() {
+            console.log('Checking widget dimensions...');
+            
+            for (let i = 1; i <= 3; i++) {
+                const widget = document.querySelector(`#blink-pay-button-container-${i} .blink-pay-widget`);
+                const button = document.querySelector(`#blink-pay-button-container-${i} .blink-pay-button`);
+                const debugDiv = document.getElementById(`debug-${i}`);
+                
+                if (widget && button) {
+                    const widgetWidth = widget.offsetWidth;
+                    const buttonWidth = button.offsetWidth;
+                    const widgetCSSWidth = getComputedStyle(widget).width;
+                    const buttonCSSWidth = getComputedStyle(button).maxWidth;
+                    const widgetCSSVar = getComputedStyle(widget).getPropertyValue('--blink-widget-width');
+                    
+                    const debugInfo = `
+Widget Width: ${widgetWidth}px
+Widget CSS Width: ${widgetCSSWidth}
+Widget CSS Variable: ${widgetCSSVar}
+Button Width: ${buttonWidth}px
+Button Max-Width: ${buttonCSSWidth}
+                    `.trim();
+                    
+                    debugDiv.textContent = debugInfo;
+                    console.log(`Widget ${i}:`, debugInfo);
+                } else {
+                    debugDiv.textContent = 'Widget not found!';
+                    console.log(`Widget ${i}: Widget not found`);
+                }
+            }
+        }
+        
+        // Initialize when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initWidgets);
+        } else {
+            initWidgets();
+        }
+    </script>
+</body>
+</html> 

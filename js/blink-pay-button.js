@@ -2216,13 +2216,13 @@
             const containerWidth = parentContainer ? parentContainer.offsetWidth : widgetContainer.offsetWidth;
             this.log(`adjustButtonResponsiveness: Parent container width = ${containerWidth}px, Widget width = ${widgetContainer.offsetWidth}px`);
             
-            // Set widget width based on custom width or container constraints
+            // Update CSS variable for widget width based on custom width or container constraints
             let widgetWidth;
             if (this.buttonWidth) {
                 // Use custom width, but don't exceed container width
                 widgetWidth = Math.min(this.buttonWidth, containerWidth);
-                widgetContainer.style.setProperty('width', widgetWidth + 'px', 'important');
-                this.log(`adjustButtonResponsiveness: Set widget width to ${widgetWidth}px (custom: ${this.buttonWidth}px, container: ${containerWidth}px)`);
+                widgetContainer.style.setProperty('--blink-widget-width', widgetWidth + 'px', 'important');
+                this.log(`adjustButtonResponsiveness: Set widget width CSS variable to ${widgetWidth}px (custom: ${this.buttonWidth}px, container: ${containerWidth}px)`);
             } else {
                 // Use responsive width based on container size
                 if (containerWidth <= 300) {
@@ -2233,8 +2233,8 @@
                     widgetWidth = 370;
                 }
                 widgetWidth = Math.min(widgetWidth, containerWidth);
-                widgetContainer.style.setProperty('width', widgetWidth + 'px', 'important');
-                this.log(`adjustButtonResponsiveness: Set responsive widget width to ${widgetWidth}px`);
+                widgetContainer.style.setProperty('--blink-widget-width', widgetWidth + 'px', 'important');
+                this.log(`adjustButtonResponsiveness: Set responsive widget width CSS variable to ${widgetWidth}px`);
             }
             
             // Remove any existing responsive classes
