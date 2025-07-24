@@ -835,87 +835,92 @@
                 }
                 .blink-pay-widget .blink-pay-input-group input,
                 .blink-pay-input-group input[type="number"] {
-                    flex: 1 1 auto !important;
-                    padding: 10px 12px !important;
-                    border: none !important;
-                    background-color: ${inputBgColor} !important;
-                    color: ${textColor} !important;
-                    font-size: 16px !important;
-                    font-family: 'IBM Plex Sans', sans-serif !important;
-                    width: auto !important;
-                    min-width: 120px !important;
-                    height: auto !important;
-                    line-height: normal !important;
-                    box-sizing: border-box !important;
-                    margin: 0 !important;
-                    outline: none !important;
-                    border-radius: 0 !important;
-                    -webkit-appearance: none !important;
-                    -moz-appearance: textfield !important;
+                    flex: 1 1 auto;
+                    padding: 10px 12px;
+                    border: none;
+                    background-color: var(--blink-input-bg-color);
+                    color: var(--blink-text-color);
+                    font-size: 16px;
+                    font-family: var(--blink-font-family);
+                    width: auto;
+                    min-width: 120px;
+                    height: auto;
+                    line-height: normal;
+                    box-sizing: border-box;
+                    margin: 0;
+                    outline: none;
+                    border-radius: 0;
+                    -webkit-appearance: none;
+                    -moz-appearance: textfield;
                 }
+                
                 .blink-pay-widget .blink-pay-input-group input:focus,
                 .blink-pay-input-group input[type="number"]:focus {
-                    outline: none !important;
-                    box-shadow: none !important;
+                    outline: none;
+                    box-shadow: none;
                 }
                 .blink-pay-widget .blink-pay-currency-select,
                 .blink-pay-input-group .blink-pay-currency-select {
-                    border: none !important;
-                    background-color: ${secondaryBgColor} !important;
-                    color: ${textColor} !important;
-                    font-size: 16px !important;
-                    font-weight: 500 !important;
-                    padding: 10px 12px !important;
-                    cursor: pointer !important;
-                    font-family: 'IBM Plex Sans', sans-serif !important;
-                    min-width: 70px !important;
-                    width: auto !important;
-                    flex-shrink: 0 !important;
-                    height: auto !important;
-                    line-height: normal !important;
-                    box-sizing: border-box !important;
-                    margin: 0 !important;
-                    border-radius: 0 !important;
-                    -webkit-appearance: none !important;
-                    -moz-appearance: none !important;
-                    appearance: none !important;
+                    border: none;
+                    background-color: var(--blink-secondary-bg-color);
+                    color: var(--blink-text-color);
+                    font-size: 16px;
+                    font-weight: 500;
+                    padding: 10px 12px;
+                    cursor: pointer;
+                    font-family: var(--blink-font-family);
+                    min-width: 70px;
+                    width: auto;
+                    flex-shrink: 0;
+                    height: auto;
+                    line-height: normal;
+                    box-sizing: border-box;
+                    margin: 0;
+                    border-radius: 0;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    appearance: none;
                 }
+                
                 .blink-pay-widget .blink-pay-currency-select:focus,
                 .blink-pay-input-group .blink-pay-currency-select:focus {
-                    outline: none !important;
-                    box-shadow: none !important;
+                    outline: none;
+                    box-shadow: none;
                 }
                 .blink-pay-qr {
                     display: none;
-                    width: 100% !important;
-                    height: 120px !important;
-                    justify-content: center !important;
-                    align-items: center !important;
-                    padding-top: 5px !important;
-                    margin-bottom: 25px !important;
-                    box-sizing: border-box !important;
-                    flex-direction: column !important;
+                    width: 100%;
+                    height: 120px;
+                    justify-content: center;
+                    align-items: center;
+                    padding-top: 5px;
+                    margin-bottom: 25px;
+                    box-sizing: border-box;
+                    flex-direction: column;
                 }
+                
                 .blink-pay-qr.blink-pay-show {
-                    display: flex !important;
+                    display: flex;
                 }
+                
                 .blink-pay-qr img {
-                    width: 110px !important;
-                    height: 110px !important;
-                    background-color: white !important;
-                    border-radius: 8px !important;
-                    padding: 5px !important;
-                    box-sizing: border-box !important;
+                    width: 110px;
+                    height: 110px;
+                    background-color: white;
+                    border-radius: 8px;
+                    padding: 5px;
+                    box-sizing: border-box;
                 }
+                
                 .blink-pay-success {
                     display: none;
-                    width: 100% !important;
-                    height: 120px !important;
-                    justify-content: center !important;
-                    align-items: flex-start !important;
-                    padding-top: 5px !important;
-                    margin-bottom: 15px !important;
-                    box-sizing: border-box !important;
+                    width: 100%;
+                    height: 120px;
+                    justify-content: center;
+                    align-items: flex-start;
+                    padding-top: 5px;
+                    margin-bottom: 15px;
+                    box-sizing: border-box;
                 }
                 .blink-pay-success.blink-pay-show {
                     display: flex !important;
@@ -934,36 +939,36 @@
                 }
                 .blink-pay-widget .${this.buttonClass},
                 .${this.buttonClass} {
-                    width: 100% !important;
-                    max-width: 310px !important;
-                    padding: 10px 12px !important;
-                    background: ${colors.gradient} !important;
-                    color: white !important;
-                    border: none !important;
-                    border-radius: 8px !important;
-                    cursor: pointer !important;
-                    font-size: 14px !important;
-                    font-weight: 600 !important;
-                    text-align: center !important;
-                    transition: all 0.2s !important;
-                    font-family: 'IBM Plex Sans', sans-serif !important;
-                    margin-bottom: 10px !important;
-                    white-space: nowrap !important;
-                    overflow: hidden !important;
-                    text-overflow: ellipsis !important;
-                    height: 44px !important;
-                    max-height: 44px !important;
-                    min-height: 44px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    box-sizing: border-box !important;
-                    margin-top: 0 !important;
-                    margin-left: auto !important;
-                    margin-right: auto !important;
-                    -webkit-appearance: none !important;
-                    -moz-appearance: none !important;
-                    appearance: none !important;
+                    width: 100%;
+                    max-width: var(--blink-button-width, 310px);
+                    padding: 10px 12px;
+                    background: ${colors.gradient};
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 600;
+                    text-align: center;
+                    transition: all 0.2s;
+                    font-family: var(--blink-font-family);
+                    margin-bottom: 10px;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    height: 44px;
+                    max-height: 44px;
+                    min-height: 44px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-sizing: border-box;
+                    margin-top: 0;
+                    margin-left: auto;
+                    margin-right: auto;
+                    -webkit-appearance: none;
+                    -moz-appearance: none;
+                    appearance: none;
                 }
                 
                 /* Additional responsive override classes for JavaScript control */
