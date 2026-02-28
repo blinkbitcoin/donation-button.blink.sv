@@ -613,8 +613,8 @@
                 { code: 'USD', name: 'USD', isCrypto: false },
             ];
             
-            if (!this.username) {
-                console.error('Blink Pay Button: username is required');
+            if (!this.username || !this.username.includes('@')) {
+                console.error('Blink Pay Button: a valid Lightning Address is required (user@domain.tld)');
                 return;
             }
             
@@ -1328,7 +1328,17 @@
             return satsAmount;
         },
         
-        // Convert amount to USD cents
+        // Convert amount to millisatoshis for LNURL-pay
+        convertToMillisatoshis: function(amount, fromCurrency) {
+            if (fromCurrency === 'sats') {
+                return Math.round(amount * 1000);
+            }
+            // For fiat: convert to sats first, then to msats
+            const sats = this.convertToSatoshis(amount, fromCurrency);
+            return sats * 1000;
+        },
+
+        // Convert amount to USD cents (kept for exchange rate reference)
         convertToUsdCents: function(amount, fromCurrency) {
             if (fromCurrency === 'sats') {
                 // For sats to USD cents, we need USD exchange rate
@@ -1336,14 +1346,14 @@
                 if (!usdRates || !usdRates.satPriceInCurrency) {
                     throw new Error('USD exchange rate not available');
                 }
-                
+
                 // satPriceInCurrency is in USD minor units (cents) per sat
                 // So sats * satPriceInCurrency gives us USD cents directly
                 const usdCentsAmount = Math.round(amount * usdRates.satPriceInCurrency);
                 this.log(`Converting ${amount} sats to ${usdCentsAmount} USD cents (1 sat = ${usdRates.satPriceInCurrency} USD cents)`);
                 return usdCentsAmount;
             }
-            
+
             // For fiat currencies, use cached exchange rate
             const exchangeRates = this.exchangeRates[fromCurrency];
             if (!exchangeRates || !exchangeRates.usdCentPriceInCurrency) {
@@ -1400,50 +1410,36 @@
                 
                 try {
                     this.log(`Processing donation: ${amount} ${this.selectedCurrency}`);
-                    
-                    // Step 1: Get wallet information
-                    this.log('About to call getAccountDefaultWallet');
-                    if (typeof this.getAccountDefaultWallet !== 'function') {
-                        throw new Error('getAccountDefaultWallet is not a function - this context may be lost');
+
+                    // Step 1: Fetch LNURL-pay data for the Lightning Address
+                    this.log('Fetching LNURL-pay data for: ' + this.username);
+                    const lnurlData = await this.fetchLnurlPayData(this.username);
+                    this.log(`Retrieved LNURL-pay data:`, lnurlData);
+
+                    // Step 2: Convert amount to millisatoshis
+                    const amountMsats = this.convertToMillisatoshis(amount, this.selectedCurrency);
+                    this.log(`Converted to ${amountMsats} millisatoshis`);
+
+                    // Validate against LNURL-pay min/max constraints
+                    if (amountMsats < lnurlData.minSendable) {
+                        const minSats = Math.ceil(lnurlData.minSendable / 1000);
+                        throw new Error(`${this.t('amountMustBeAtLeast')} ${minSats} sats`);
                     }
-                    const walletInfo = await this.getAccountDefaultWallet(this.username);
-                    if (!walletInfo || !walletInfo.id) {
-                        throw new Error('Could not retrieve wallet information for this username');
+                    if (amountMsats > lnurlData.maxSendable) {
+                        const maxSats = Math.floor(lnurlData.maxSendable / 1000);
+                        throw new Error(`Amount too large. Maximum is ${maxSats} sats`);
                     }
-                    this.log(`Retrieved wallet info:`, walletInfo);
-                    
-                    // Step 2: Convert amount to the correct unit based on wallet currency
-                    let convertedAmount;
-                    if (walletInfo.currency === 'BTC') {
-                        // Convert to satoshis for BTC wallets
-                        convertedAmount = this.convertToSatoshis(amount, this.selectedCurrency);
-                        this.log(`Converted to ${convertedAmount} satoshis for BTC wallet`);
-                    } else if (walletInfo.currency === 'USD') {
-                        // Convert to USD cents for USD wallets
-                        // First ensure we have USD rates if converting from sats
-                        if (this.selectedCurrency === 'sats' && !this.exchangeRates['USD']) {
-                            await this.fetchExchangeRate('USD');
-                        }
-                        convertedAmount = this.convertToUsdCents(amount, this.selectedCurrency);
-                        this.log(`Converted to ${convertedAmount} USD cents for USD wallet`);
-                    } else {
-                        throw new Error(`Unsupported wallet currency: ${walletInfo.currency}`);
-                    }
-                    
-                    // Step 3: Create invoice using appropriate currency
-                    this.log('About to call createInvoice');
-                    if (typeof this.createInvoice !== 'function') {
-                        throw new Error('createInvoice is not a function - this context may be lost');
-                    }
-                    const invoiceResult = await this.createInvoice(walletInfo.id, convertedAmount, walletInfo.currency);
+
+                    // Step 3: Fetch invoice from LNURL-pay callback
+                    this.log('Fetching invoice from LNURL-pay callback');
+                    const invoiceResult = await this.fetchLnurlInvoice(lnurlData.callback, amountMsats);
                     if (!invoiceResult || !invoiceResult.paymentRequest) {
                         throw new Error('Could not create invoice');
                     }
-                    this.log(`Created invoice`, { paymentRequest: invoiceResult.paymentRequest.substring(0, 30) + '...', expiryMinutes: invoiceResult.expiryMinutes });
-                    
-                    // Step 3: Show QR code and set up payment monitoring
-                    this.displayInvoice(invoiceResult.paymentRequest, invoiceResult.expiryMinutes);
-                    this.subscribeToPaymentStatus(invoiceResult.paymentRequest);
+                    this.log(`Received invoice`, { paymentRequest: invoiceResult.paymentRequest.substring(0, 30) + '...' });
+
+                    // Step 4: Show QR code
+                    this.displayInvoice(invoiceResult.paymentRequest, 15);
                     
                 } catch (error) {
                     this.log(`Error in donation process: ${error.message}`, error);
@@ -1460,137 +1456,76 @@
             }
         },
         
-        // Get the default wallet information for a username
-        getAccountDefaultWallet: async function(username) {
-            const query = `
-                query Query($username: Username!) {
-                    accountDefaultWallet(username: $username) {
-                        id
-                        currency
-                    }
-                }
-            `;
-            
-            const variables = {
-                username: username
-            };
-            
+        // Fetch LNURL-pay data for a Lightning Address (user@domain.tld)
+        fetchLnurlPayData: async function(lightningAddress) {
+            const parts = lightningAddress.split('@');
+            if (parts.length !== 2 || !parts[0] || !parts[1]) {
+                throw new Error('Invalid Lightning Address format. Expected user@domain.tld');
+            }
+            const [user, domain] = parts;
+            const lnurlpUrl = `https://${domain}/.well-known/lnurlp/${user}`;
+
+            this.log(`Fetching LNURL-pay data from ${lnurlpUrl}`);
+
             try {
-                this.log(`Fetching from API: accountDefaultWallet`, { variables });
-                const response = await fetch('https://api.blink.sv/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query,
-                        variables
-                    })
-                });
-                
-                const data = await response.json();
-                this.log(`API response for accountDefaultWallet`, data);
-                
-                if (data.errors) {
-                    throw new Error(data.errors[0].message || 'Error fetching wallet information');
+                const response = await fetch(lnurlpUrl);
+                if (!response.ok) {
+                    throw new Error(`Could not reach ${domain}. Check that the Lightning Address is correct.`);
                 }
-                
+
+                const data = await response.json();
+                this.log(`LNURL-pay response`, data);
+
+                if (data.status === 'ERROR') {
+                    throw new Error(data.reason || 'Lightning Address not found');
+                }
+                if (data.tag !== 'payRequest') {
+                    throw new Error('Invalid LNURL-pay response from server');
+                }
+
                 return {
-                    id: data.data.accountDefaultWallet?.id,
-                    currency: data.data.accountDefaultWallet?.currency
+                    callback: data.callback,
+                    minSendable: data.minSendable,  // millisats
+                    maxSendable: data.maxSendable    // millisats
                 };
-                
+
             } catch (error) {
-                this.log(`API error for accountDefaultWallet: ${error.message}`, error);
-                console.error('Error getting wallet information:', error);
+                this.log(`Error fetching LNURL-pay data: ${error.message}`, error);
+                console.error('Error fetching LNURL-pay data:', error);
                 throw error;
             }
         },
         
-        // Create a lightning invoice
-        createInvoice: async function(walletId, amount, currency) {
-            let mutation, mutationName, variables, expiryMinutes;
-            
-            if (currency === 'BTC') {
-                // Use BTC mutation - 15 minutes expiry
-                expiryMinutes = 15;
-                mutation = `
-                mutation Mutation($input: LnInvoiceCreateOnBehalfOfRecipientInput!) {
-                    lnInvoiceCreateOnBehalfOfRecipient(input: $input) {
-                        invoice {
-                            paymentRequest
-                                satoshis
-                        }
-                    }
-                }
-            `;
-            
-                variables = {
-                input: {
-                    recipientWalletId: walletId,
-                    amount: amount.toString(),
-                    memo: `${this.username} donation button`,
-                    expiresIn: "15"
-                }
-            };
-            
-                mutationName = 'lnInvoiceCreateOnBehalfOfRecipient';
-            } else if (currency === 'USD') {
-                // Use USD mutation - 5 minutes expiry
-                expiryMinutes = 5;
-                mutation = `
-                    mutation LnUsdInvoiceCreateOnBehalfOfRecipient($input: LnUsdInvoiceCreateOnBehalfOfRecipientInput!) {
-                        lnUsdInvoiceCreateOnBehalfOfRecipient(input: $input) {
-                            invoice {
-                                paymentRequest
-                                satoshis
-                            }
-                        }
-                    }
-                `;
-                
-                variables = {
-                    input: {
-                        amount: amount.toString(),
-                        recipientWalletId: walletId,
-                        memo: `${this.username} donation button`,
-                        expiresIn: "5"
-                    }
-                };
-                
-                mutationName = 'lnUsdInvoiceCreateOnBehalfOfRecipient';
-            } else {
-                throw new Error(`Unsupported currency: ${currency}`);
-            }
-            
+        // Fetch a BOLT-11 invoice from an LNURL-pay callback
+        fetchLnurlInvoice: async function(callback, amountMsats) {
+            const separator = callback.includes('?') ? '&' : '?';
+            const url = `${callback}${separator}amount=${amountMsats}`;
+
+            this.log(`Fetching invoice from LNURL-pay callback: ${url}`);
+
             try {
-                this.log(`Fetching from API: ${mutationName}`, { variables });
-                const response = await fetch('https://api.blink.sv/graphql', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        query: mutation,
-                        variables
-                    })
-                });
-                
-                const data = await response.json();
-                this.log(`API response for ${mutationName}`, data);
-                
-                if (data.errors) {
-                    throw new Error(data.errors[0].message || 'Error creating invoice');
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Failed to get invoice from Lightning Address provider');
                 }
-                
+
+                const data = await response.json();
+                this.log(`LNURL-pay invoice response`, data);
+
+                if (data.status === 'ERROR') {
+                    throw new Error(data.reason || 'Error creating invoice');
+                }
+                if (!data.pr) {
+                    throw new Error('No payment request in LNURL-pay response');
+                }
+
                 return {
-                    paymentRequest: data.data[mutationName].invoice.paymentRequest,
-                    expiryMinutes: expiryMinutes
+                    paymentRequest: data.pr
                 };
-                
+
             } catch (error) {
-                this.log(`API error for ${mutationName}: ${error.message}`, error);
-                console.error('Error creating invoice:', error);
+                this.log(`Error fetching LNURL-pay invoice: ${error.message}`, error);
+                console.error('Error fetching invoice:', error);
                 throw error;
             }
         },
@@ -1870,167 +1805,6 @@
             
             // Start loading QR image
             qrImage.src = qrUrl;
-        },
-        
-        // Subscribe to payment status updates
-        subscribeToPaymentStatus: function(paymentRequest) {
-            // WebSocket-based approach for real-time payment status updates
-            this.log(`Attempting to connect to WebSocket at wss://ws.blink.sv/graphql`);
-            const wsClient = new WebSocket('wss://ws.blink.sv/graphql', 'graphql-transport-ws');
-            
-            // Connection initialization message
-            const initMessage = {
-                type: 'connection_init',
-                payload: {}
-            };
-            
-            // Message to send when connection is established
-            const subscriptionMsg = {
-                id: '1',
-                type: 'subscribe',
-                payload: {
-                    query: `
-                        subscription LnInvoicePaymentStatusByPaymentRequest($input: LnInvoicePaymentStatusByPaymentRequestInput!) {
-                            lnInvoicePaymentStatusByPaymentRequest(input: $input) {
-                                paymentRequest
-                                status
-                            }
-                        }
-                    `,
-                    variables: {
-                        input: {
-                            paymentRequest: paymentRequest
-                        }
-                    }
-                }
-            };
-            
-            // Initialize WebSocket connection
-            wsClient.onopen = () => {
-                this.log(`WebSocket connection opened`, { readyState: wsClient.readyState });
-                
-                // First send the connection initialization message
-                this.log(`Sending connection initialization message`, initMessage);
-                wsClient.send(JSON.stringify(initMessage));
-                
-                // Then send the subscription after a short delay
-                setTimeout(() => {
-                    this.log(`Sending subscription message`, subscriptionMsg);
-                    wsClient.send(JSON.stringify(subscriptionMsg));
-                }, 500);
-            };
-            
-            // Handle WebSocket messages
-            wsClient.onmessage = (event) => {
-                try {
-                    this.log(`Received WebSocket message:`, event.data);
-                    const data = JSON.parse(event.data);
-                    
-                    // Check for connection acknowledgment
-                    if (data.type === 'connection_ack') {
-                        this.log(`Connection acknowledged, subscription ready`);
-                    }
-                    
-                    // Check for subscription response
-                    if (data.type === 'data' && data.payload && data.payload.data) {
-                        const paymentStatus = data.payload.data.lnInvoicePaymentStatusByPaymentRequest;
-                        this.log(`Received payment status update`, paymentStatus);
-                        
-                        if (paymentStatus && paymentStatus.status === 'PAID') {
-                            this.log(`Payment confirmed via WebSocket! 🎉`);
-                            this.handlePaymentSuccess();
-                            wsClient.close();
-                        }
-                    }
-                } catch (error) {
-                    this.log(`Error processing WebSocket message: ${error.message}`, error);
-                    console.error('Error processing WebSocket message:', error);
-                }
-            };
-            
-            // Handle WebSocket errors
-            wsClient.onerror = (error) => {
-                this.log(`WebSocket error`, error);
-                console.error('WebSocket error:', error);
-                
-                // Fall back to polling as backup if WebSocket fails
-                this.log(`Falling back to polling due to WebSocket error`);
-                this.pollPaymentStatus(paymentRequest);
-            };
-            
-            // Handle WebSocket closure
-            wsClient.onclose = (event) => {
-                this.log(`WebSocket connection closed`, { code: event.code, reason: event.reason });
-                console.log('WebSocket connection closed');
-            };
-            
-            // Add a timeout to fall back to polling if no updates received
-            setTimeout(() => {
-                if (wsClient.readyState === WebSocket.OPEN) {
-                    this.log(`No WebSocket updates received after timeout, falling back to polling`);
-                    this.pollPaymentStatus(paymentRequest);
-                }
-            }, 10000);
-        },
-        
-        // Polling fallback for payment status
-        pollPaymentStatus: function(paymentRequest) {
-            this.log(`Starting payment status polling for invoice`);
-            const checkPaymentStatus = async () => {
-                try {
-                    const query = `
-                        query CheckPaymentStatus($input: LnInvoicePaymentStatusInput!) {
-                            lnInvoicePaymentStatus(input: $input) {
-                                status
-                            }
-                        }
-                    `;
-                    
-                    const variables = {
-                        input: {
-                            paymentRequest: paymentRequest
-                        }
-                    };
-                    
-                    this.log(`Polling API for payment status`);
-                    const response = await fetch('https://api.blink.sv/graphql', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            query,
-                            variables
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    this.log(`Poll response received`, data);
-                    
-                    if (data.data && data.data.lnInvoicePaymentStatus) {
-                        const status = data.data.lnInvoicePaymentStatus.status;
-                        this.log(`Payment status: ${status}`);
-                        
-                        if (status === 'PAID') {
-                            this.log(`Payment confirmed via polling! 🎉`);
-                            this.handlePaymentSuccess();
-                            return; // Stop polling
-                        }
-                    }
-                    
-                    // Continue polling if not yet paid
-                    this.log(`Payment not confirmed yet, polling again in 2 seconds`);
-                    setTimeout(checkPaymentStatus, 2000);
-                    
-                } catch (error) {
-                    this.log(`Error polling for payment status: ${error.message}`, error);
-                    console.error('Error checking payment status:', error);
-                    setTimeout(checkPaymentStatus, 5000); // Retry with longer interval on error
-                }
-            };
-            
-            // Start polling
-            checkPaymentStatus();
         },
         
         // Handle successful payment

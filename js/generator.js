@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (unknownCurrencies.length > 0) {
             validationHtml += `${validCurrencies.length > 0 ? '<br>' : ''}<small class="text-warning">⚠ Unknown (will attempt): ${unknownCurrencies.join(', ')}</small>`;
-            validationHtml += `<br><small class="text-muted">Unknown currencies may work if supported by Blink API</small>`;
+            validationHtml += `<br><small class="text-muted">Unknown currencies may work if supported by the exchange rate API</small>`;
         }
         
         currencyValidation.innerHTML = validationHtml;
@@ -215,58 +215,15 @@ document.addEventListener('DOMContentLoaded', function() {
         return currencies;
     }
 
-    // Check if username exists in Blink
-    async function checkUsernameExists(username) {
-        const query = `
-            query Query($username: Username!) {
-                usernameAvailable(username: $username)
-            }
-        `;
-        
-        const variables = {
-            username: username
-        };
-        
-        try {
-            const response = await fetch('https://api.blink.sv/graphql', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    query: query,
-                    variables: variables
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.errors) {
-                // Check for invalid username format error
-                const errorMessage = data.errors[0].message;
-                if (errorMessage.includes('Invalid value for Username')) {
-                    throw new Error('INVALID_USERNAME_FORMAT');
-                }
-                throw new Error(errorMessage);
-            }
-            
-            // usernameAvailable: true means username does NOT exist
-            // usernameAvailable: false means username DOES exist
-            return !data.data.usernameAvailable;
-            
-        } catch (error) {
-            console.error('Error checking username:', error);
-            // Re-throw specific errors to be handled in generateCode
-            if (error.message === 'INVALID_USERNAME_FORMAT') {
-                throw error;
-            }
-            // On other errors, allow generation to proceed (assume username exists)
-            return true;
-        }
+    // Validate a Lightning Address format (user@domain.tld)
+    function isValidLightningAddress(address) {
+        const parts = address.split('@');
+        if (parts.length !== 2) return false;
+        const [user, domain] = parts;
+        if (!user || !domain) return false;
+        // domain must contain at least one dot
+        if (!domain.includes('.')) return false;
+        return true;
     }
     
     // Show username validation feedback
@@ -288,88 +245,38 @@ document.addEventListener('DOMContentLoaded', function() {
         inputGroup.parentElement.insertBefore(validationDiv, inputGroup.nextSibling);
     }
 
-    // Clean username input - strip @blink.sv if user enters full Lightning Address
-    function cleanUsernameInput(input) {
-        let cleaned = input.trim();
-        
-        // If user entered a full Lightning Address (username@blink.sv), strip the domain
-        if (cleaned.includes('@blink.sv')) {
-            cleaned = cleaned.replace('@blink.sv', '').trim();
-        }
-        
-        // Also handle other common Lightning Address formats
-        if (cleaned.includes('@')) {
-            // For any other @domain, just take the username part
-            cleaned = cleaned.split('@')[0].trim();
-        }
-        
-        return cleaned;
-    }
+    // Generate code based on the Lightning Address
+    function generateCode() {
+        const rawInput = blinkUsernameInput.value.trim();
+        currentUsername = rawInput;
 
-    // Generate code based on the username
-    async function generateCode() {
-        const rawInput = blinkUsernameInput.value;
-        currentUsername = cleanUsernameInput(rawInput);
-        
         if (!currentUsername) {
-            alert('Please enter your Blink username');
+            alert('Please enter your Lightning Address');
             return;
         }
-        
-        // Update the input field with the cleaned username if it was different
-        if (rawInput !== currentUsername) {
-            blinkUsernameInput.value = currentUsername;
+
+        if (!isValidLightningAddress(currentUsername)) {
+            showUsernameValidation('Please enter a valid Lightning Address (e.g., satoshi@blink.sv or satoshi@wallet.com).', true);
+            return;
         }
-        
-        // Disable generate button and show loading state
-        generateBtn.disabled = true;
-        generateBtn.textContent = 'Checking...';
-        
-        try {
-            // Check if username exists
-            const usernameExists = await checkUsernameExists(currentUsername);
-            
-            if (!usernameExists) {
-                // Username doesn't exist - show error and prevent generation
-                showUsernameValidation(
-                    'This Blink username does not exist yet. <a href="https://get.blink.sv" target="_blank" style="color: var(--blink-orange);">Download Blink now</a> and get it for yourself!',
-                    true
-                );
-                return;
-            }
-            
-            // Username exists - show success message
-            showUsernameValidation('✓ Blink username found!', false);
-        
+
+        showUsernameValidation('✓ Lightning Address accepted!', false);
+
         // Update selected currencies
         updateSelectedCurrencies();
         validateCurrencies();
-        
+
         // Show the result container
         resultContainer.style.display = 'block';
-        
+
         // Update generated code and preview
         updateGeneratedCode();
         updateWidgetPreview();
-        
+
         // Scroll to the results
         setTimeout(() => {
             resultContainer.scrollIntoView({ behavior: 'smooth' });
         }, 300);
-            
-        } catch (error) {
-            console.error('Error during code generation:', error);
-            
-            if (error.message === 'INVALID_USERNAME_FORMAT') {
-                showUsernameValidation('Invalid username format. Please enter a valid Blink username without special characters or domains.', true);
-            } else {
-                showUsernameValidation('Error checking username. Please try again.', true);
-            }
-        } finally {
-            // Re-enable generate button
-            generateBtn.disabled = false;
-            generateBtn.textContent = 'Generate Code';
-        }
     }
     
     // Update the generated code based on current settings
@@ -520,30 +427,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event listeners
-    generateBtn.addEventListener('click', () => generateCode());
+    generateBtn.addEventListener('click', generateCode);
     copyBtn.addEventListener('click', copyToClipboard);
-    
+
     // Allow Enter key to trigger generation
     blinkUsernameInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             generateCode();
-        }
-    });
-    
-    // Real-time username cleaning - clean input as user types
-    blinkUsernameInput.addEventListener('input', function(e) {
-        const rawInput = this.value;
-        const cleaned = cleanUsernameInput(rawInput);
-        
-        // Only update if the cleaned version is different and the user has finished typing
-        if (rawInput !== cleaned && rawInput.includes('@')) {
-            // Use a small delay to avoid interfering with user typing
-            clearTimeout(this.cleanupTimeout);
-            this.cleanupTimeout = setTimeout(() => {
-                this.value = cleaned;
-                // Trigger input event to update any other listeners
-                this.dispatchEvent(new Event('input', { bubbles: true }));
-            }, 500); // 500ms delay
         }
     });
     
