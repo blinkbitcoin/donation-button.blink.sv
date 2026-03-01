@@ -1439,7 +1439,7 @@
                     this.log(`Received invoice`, { paymentRequest: invoiceResult.paymentRequest.substring(0, 30) + '...' });
 
                     // Step 4: Show QR code
-                    this.displayInvoice(invoiceResult.paymentRequest, 15);
+                    this.displayInvoice(invoiceResult.paymentRequest, 15, invoiceResult.verifyUrl);
                     
                 } catch (error) {
                     this.log(`Error in donation process: ${error.message}`, error);
@@ -1520,7 +1520,8 @@
                 }
 
                 return {
-                    paymentRequest: data.pr
+                    paymentRequest: data.pr,
+                    verifyUrl: data.verify || null
                 };
 
             } catch (error) {
@@ -1531,7 +1532,7 @@
         },
         
         // Display the invoice and QR code
-        displayInvoice: function(paymentRequest, expiryMinutes) {
+        displayInvoice: function(paymentRequest, expiryMinutes, verifyUrl) {
             const qrContainer = document.getElementById('blink-pay-qr');
             const successContainer = document.getElementById('blink-pay-success');
             const amountInput = document.getElementById('blink-pay-amount');
@@ -1575,6 +1576,10 @@
                 
                 if (totalSeconds <= 0) {
                     clearInterval(countdownInterval);
+                    if (this.pollInterval) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                    }
                     countdownElement.style.color = '#c62828 !important';
                     countdownElement.textContent = '0:00';
                     this.log('Invoice expired');
@@ -1589,7 +1594,26 @@
             
             // Store interval for cleanup
             this.countdownInterval = countdownInterval;
-            
+
+            // Poll for payment settlement (LUD-21)
+            if (verifyUrl) {
+                this.log(`Starting payment status polling: ${verifyUrl}`);
+                this.pollInterval = setInterval(async () => {
+                    try {
+                        const res = await fetch(verifyUrl);
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        if (data.settled === true) {
+                            clearInterval(this.pollInterval);
+                            this.pollInterval = null;
+                            this.handlePaymentSuccess();
+                        }
+                    } catch (e) {
+                        this.log(`Poll error (will retry): ${e.message}`);
+                    }
+                }, 2000);
+            }
+
             // Generate clean, maximally scannable QR code - keep larger size for better scanning
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(paymentRequest)}`;
             this.log(`Generating clean QR code: ${qrUrl}`);
@@ -1816,6 +1840,11 @@
                 clearInterval(this.countdownInterval);
                 this.countdownInterval = null;
                 this.log('Countdown timer cleared');
+            }
+            if (this.pollInterval) {
+                clearInterval(this.pollInterval);
+                this.pollInterval = null;
+                this.log('Payment poll interval cleared');
             }
             
             // Show success icon
