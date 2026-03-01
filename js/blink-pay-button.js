@@ -20,7 +20,8 @@
             failedToFetchExchangeRate: 'Failed to fetch exchange rate for',
             pleaseTryAgain: 'Please try again.',
             anErrorOccurred: 'An error occurred while processing your donation',
-            qrCodeAlt: 'Lightning Invoice QR Code'
+            qrCodeAlt: 'Lightning Invoice QR Code',
+            alreadyPaid: "I've already paid"
         },
         es: {
             buttonText: 'Donar Bitcoin',
@@ -1662,6 +1663,30 @@
             qrContainer.innerHTML = '';
             qrContainer.appendChild(countdownElement);
             qrContainer.appendChild(qrImage);
+
+            // Manual confirmation fallback for providers without LUD-21 verify support
+            if (!verifyUrl) {
+                const paidLink = document.createElement('div');
+                paidLink.style.cssText = `
+                    text-align: center !important;
+                    margin-top: 8px !important;
+                    font-size: 11px !important;
+                    font-family: 'IBM Plex Sans', sans-serif !important;
+                `;
+                const paidAnchor = document.createElement('a');
+                paidAnchor.textContent = this.t('alreadyPaid');
+                paidAnchor.style.cssText = `
+                    color: #666666 !important;
+                    text-decoration: underline !important;
+                    cursor: pointer !important;
+                `;
+                paidAnchor.addEventListener('click', () => {
+                    this.handlePaymentSuccess();
+                });
+                paidLink.appendChild(paidAnchor);
+                qrContainer.appendChild(paidLink);
+            }
+
             qrContainer.classList.add('blink-pay-show');
             qrContainer.style.visibility = 'visible';
             qrContainer.style.opacity = '1';
@@ -1690,13 +1715,7 @@
                         this.log(`Using WebLN to send payment`);
                         await window.webln.sendPayment(paymentRequest);
                         this.log(`WebLN payment request sent successfully`);
-                        
-                        // Show feedback that payment was initiated
-                        this.showStatus('success', 'Payment request sent to wallet');
-                        setTimeout(() => {
-                            this.showStatus('', '');
-                        }, 3000);
-                        
+                        this.handlePaymentSuccess();
                         return; // Exit early if WebLN worked
                     } catch (weblnError) {
                         console.error('WebLN payment failed: ', weblnError);
