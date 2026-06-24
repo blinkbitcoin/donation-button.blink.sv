@@ -1,7 +1,10 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.3.1 - Bound payment-status polling to the invoice expiry so the
+ * Version: 1.3.2 - Friendly "username not found" message: a non-existent Blink
+ *                  username now shows a clear donor-facing error instead of the
+ *                  raw "LNURL endpoint returned 404" technical message.
+ *          1.3.1 - Bound payment-status polling to the invoice expiry so the
  *                  pollers stop instead of hammering the API forever when a donor
  *                  never pays. Adds isInvoiceExpired/stopPaymentPolling cleanup.
  *          1.3.0 - Self-custodial (Spark) receive via Lightning address (LNURL-pay
@@ -24,6 +27,7 @@
             failedToFetchExchangeRate: 'Failed to fetch exchange rate for',
             pleaseTryAgain: 'Please try again.',
             anErrorOccurred: 'An error occurred while processing your donation',
+            usernameNotFound: 'This Blink username could not be found. Please check the username.',
             qrCodeAlt: 'Lightning Invoice QR Code'
         },
         es: {
@@ -1575,11 +1579,23 @@
             this.log('Self-custodial: requesting LN-address invoice', { lightningAddress, satsAmount });
 
             const memo = `${this.username} donation button`;
-            const invoice = await lnurl.getInvoiceFromLightningAddress(
-                lightningAddress,
-                satsAmount,
-                memo
-            );
+            let invoice;
+            try {
+                invoice = await lnurl.getInvoiceFromLightningAddress(
+                    lightningAddress,
+                    satsAmount,
+                    memo
+                );
+            } catch (error) {
+                // Custodial lookup already found no wallet; if the LNURL
+                // .well-known lookup also 404s, the username simply does not
+                // exist on blink.sv. Surface a clear donor-facing message instead
+                // of the raw "LNURL endpoint returned 404" technical error.
+                if (this.isUsernameNotFoundError(error)) {
+                    throw new Error(this.t('usernameNotFound'));
+                }
+                throw error;
+            }
             if (!invoice || !invoice.paymentRequest) {
                 throw new Error('Could not create invoice');
             }
@@ -1600,6 +1616,14 @@
                 this.log('No LUD-21 verify URL; falling back to GraphQL payment polling');
                 this.pollPaymentStatus(invoice.paymentRequest);
             }
+        },
+
+        // Classify an LNURL error as "username does not exist": the .well-known
+        // lookup for an unknown user returns HTTP 404. Used to show a friendly
+        // donor-facing message instead of the raw LNURL technical error.
+        isUsernameNotFoundError: function(error) {
+            const message = (error && error.message) || '';
+            return /\b404\b/.test(message) || /not found/i.test(message);
         },
 
         // Poll a LUD-21 verify URL until the invoice is settled (Spark path).
@@ -2631,7 +2655,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.3.1');
+            params.append('widget_version', '1.3.2');
             
             return `${baseUrl}?${params.toString()}`;
         }
