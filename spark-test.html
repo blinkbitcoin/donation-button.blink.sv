@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink Pay Button — Self-custodial (Spark) test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 760px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.5;
+        }
+        .test-container {
+            margin: 24px 0;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+        }
+        h1 { font-size: 22px; }
+        h3 { margin-top: 0; }
+        .note {
+            background: #fff8e1;
+            border: 1px solid #ffe0a3;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+        code { background: #f1f1f1; padding: 1px 5px; border-radius: 4px; }
+        .log {
+            margin-top: 10px;
+            font-size: 12px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            color: #555;
+            max-height: 220px;
+            overflow: auto;
+            background: #fafafa;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        label { font-size: 13px; }
+        input { padding: 6px 8px; font-size: 14px; width: 280px; }
+    </style>
+</head>
+<body>
+    <h1>Self-custodial (Spark) donation button — manual test</h1>
+
+    <div class="note">
+        This page exercises the <strong>self-custodial (Spark) receive path</strong>.
+        Enter a Blink username whose account is <strong>self-custodial (Spark)</strong>
+        (e.g. <code>yasar</code>). The widget will: try the custodial
+        <code>accountDefaultWallet</code> first, find no custodial wallet, then fall back
+        to the Lightning-address (LNURL-pay) flow and detect settlement via the LUD-21
+        <code>verify</code> URL. A custodial username (e.g. <code>pretyflaco</code>) should
+        still use the unchanged custodial flow.
+    </div>
+
+    <div class="test-container">
+        <h3>Configure</h3>
+        <label>Blink username:
+            <input id="username-input" type="text" value="yasar" />
+        </label>
+        <button id="reload-btn" type="button">Load widget</button>
+        <div id="blink-pay-button-container" style="margin-top:16px;"></div>
+        <div class="log" id="log">Logs will appear here…</div>
+    </div>
+
+    <script src="js/blink-pay-button.js"></script>
+    <script>
+        const logEl = document.getElementById('log');
+        const origLog = console.log;
+        console.log = function (...args) {
+            origLog.apply(console, args);
+            try {
+                logEl.textContent += '\n' + args.map(a =>
+                    typeof a === 'object' ? JSON.stringify(a) : String(a)
+                ).join(' ');
+            } catch (e) { /* ignore */ }
+        };
+
+        function loadWidget() {
+            const username = document.getElementById('username-input').value.trim();
+            document.getElementById('blink-pay-button-container').innerHTML = '';
+            logEl.textContent = 'Loading widget for: ' + username;
+            BlinkPayButton.init({
+                username: username,
+                containerId: 'blink-pay-button-container',
+                buttonText: 'Donate Bitcoin',
+                themeMode: 'light',
+                defaultAmount: 1000,
+                debug: true,
+                supportedCurrencies: [
+                    { code: 'sats', name: 'sats', isCrypto: true },
+                    { code: 'USD', name: 'USD', isCrypto: false },
+                ],
+            });
+        }
+
+        document.getElementById('reload-btn').addEventListener('click', loadWidget);
+        loadWidget();
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ A lightweight, embeddable Bitcoin Lightning donation widget that integrates with
 ## 🚀 Features
 
 - **⚡ Lightning Fast**: Instant Bitcoin Lightning payments via Blink API
+- **🔑 Self-custodial ready**: Works for both custodial Blink accounts and **self-custodial Blink (Spark)** users, addressed by their Blink Lightning address — no extra configuration
 - **💰 Multi-Currency**: Support for 30+ fiat currencies (USD, EUR, GBP, etc.) with automatic conversion
 - **🎨 Customizable**: Light/dark themes and flexible styling
 - **📱 Responsive**: Works perfectly on desktop and mobile devices
@@ -93,6 +94,37 @@ The widget supports 30+ currencies through Blink's exchange rate API:
 **Regional**: ZAR, BRL, MXN, INR, KRW, SGD, THB, PHP  
 **African**: NGN, KES, GHS, UGX, TZS, RWF, ETB  
 **Others**: NOK, SEK, DKK, PLN, CZK, HUF, TRY, ILS, AED, SAR
+
+## 🔑 Self-custodial (Spark) support
+
+The widget works for **both** account types with no change to the embed code:
+
+- **Custodial Blink accounts** use the existing flow (`accountDefaultWallet` →
+  on-behalf-of invoice → real-time WebSocket payment detection).
+- **Self-custodial Blink (Spark) accounts** have no custodial wallet, so the widget
+  automatically falls back to the account's **Blink Lightning address**
+  (`username@blink.sv`): it requests an invoice via LNURL-pay and detects settlement via
+  the LUD-21 `verify` URL.
+
+Funds always land in the user's **current default account** (this is handled server-side
+by the Blink LNURL server — if the user's default is Dollar, the funds arrive in their
+USD account for custodial accounts; self-custodial Spark accounts receive in sats/BTC).
+
+Only `blink.sv` Lightning addresses are supported.
+
+## 🧪 Running the tests
+
+Unit tests (Vitest + jsdom) cover the LNURL-pay / LUD-21 helpers and the self-custodial
+fallback, to prevent regressions:
+
+```bash
+npm install
+npm test          # run once
+npm run test:watch
+```
+
+There is also a manual page, `spark-test.html`, for end-to-end testing against a real
+self-custodial (Spark) username.
 
 ## 📊 Analytics Tracking
 
