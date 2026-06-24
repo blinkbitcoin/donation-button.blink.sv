@@ -6,7 +6,7 @@
  * module.exports). We load it via createRequire so the CommonJS export path is
  * exercised exactly as Node/test consumers see it.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { loadUmd } from './load-umd.js';
 
 const BlinkLnurl = loadUmd('../js/blink-lnurl.js');

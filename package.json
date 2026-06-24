@@ -6,10 +6,17 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --check \"js/**/*.js\" \"tests/**/*.js\" \"*.config.js\"",
+    "format:fix": "prettier --write \"js/**/*.js\" \"tests/**/*.js\" \"*.config.js\""
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^17.7.0",
     "jsdom": "^25.0.1",
+    "prettier": "^3.8.4",
     "vitest": "^4.0.0"
   }
 }
