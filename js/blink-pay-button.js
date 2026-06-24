@@ -1,7 +1,10 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.3.0 - Self-custodial (Spark) receive via Lightning address (LNURL-pay
+ * Version: 1.3.1 - Bound payment-status polling to the invoice expiry so the
+ *                  pollers stop instead of hammering the API forever when a donor
+ *                  never pays. Adds isInvoiceExpired/stopPaymentPolling cleanup.
+ *          1.3.0 - Self-custodial (Spark) receive via Lightning address (LNURL-pay
  *                  custodial-first fallback + LUD-21 verify). Custodial flow unchanged.
  */
 (function() {
@@ -1605,6 +1608,13 @@
             const lnurl = this.getLnurl();
             this.log('Starting LUD-21 verify polling');
             const check = async () => {
+                this.paymentPollTimeout = null;
+                // Stop once the invoice has expired (bounded by displayInvoice's
+                // deadline) so we don't poll forever when the donor never pays.
+                if (this.isInvoiceExpired()) {
+                    this.log('Invoice expired; stopping LUD-21 verify polling');
+                    return;
+                }
                 try {
                     const result = await lnurl.verifyLnurlPayment(verifyUrl);
                     if (result && result.settled === true) {
@@ -1612,13 +1622,28 @@
                         this.handlePaymentSuccess();
                         return; // stop polling
                     }
-                    setTimeout(check, 2000);
+                    this.paymentPollTimeout = setTimeout(check, 2000);
                 } catch (error) {
                     this.log(`Error polling verify status: ${error.message}`, error);
-                    setTimeout(check, 5000); // back off on error
+                    this.paymentPollTimeout = setTimeout(check, 5000); // back off on error
                 }
             };
             check();
+        },
+
+        // True once the current invoice's polling deadline has passed. Returns
+        // false when no invoice deadline is set (defensive: never stop early).
+        isInvoiceExpired: function() {
+            return typeof this.invoiceExpiresAt === 'number' && Date.now() >= this.invoiceExpiresAt;
+        },
+
+        // Stop any in-flight payment-status poll and clear the invoice deadline.
+        stopPaymentPolling: function() {
+            if (this.paymentPollTimeout) {
+                clearTimeout(this.paymentPollTimeout);
+                this.paymentPollTimeout = null;
+            }
+            this.invoiceExpiresAt = null;
         },
 
         // Get the default wallet information for a username
@@ -1800,6 +1825,14 @@
             // Initialize countdown
             let totalSeconds = expiryMinutes * 60;
             let countdownInterval;
+
+            // Record an absolute deadline so the payment-status pollers can stop
+            // themselves once the invoice has expired (a small grace period lets a
+            // payment landing right at expiry still be detected). Without this the
+            // pollers would hammer the API forever on a long-lived embed where the
+            // donor never pays. See pollVerifyStatus / pollPaymentStatus.
+            const POLL_GRACE_MS = 5000;
+            this.invoiceExpiresAt = Date.now() + totalSeconds * 1000 + POLL_GRACE_MS;
             
             const updateCountdown = () => {
                 const minutes = Math.floor(totalSeconds / 60);
@@ -2146,6 +2179,12 @@
         pollPaymentStatus: function(paymentRequest) {
             this.log(`Starting payment status polling for invoice`);
             const checkPaymentStatus = async () => {
+                this.paymentPollTimeout = null;
+                // Stop once the invoice has expired so we don't poll forever.
+                if (this.isInvoiceExpired()) {
+                    this.log('Invoice expired; stopping payment status polling');
+                    return;
+                }
                 try {
                     const query = `
                         query CheckPaymentStatus($input: LnInvoicePaymentStatusInput!) {
@@ -2189,12 +2228,12 @@
                     
                     // Continue polling if not yet paid
                     this.log(`Payment not confirmed yet, polling again in 2 seconds`);
-                    setTimeout(checkPaymentStatus, 2000);
+                    this.paymentPollTimeout = setTimeout(checkPaymentStatus, 2000);
                     
                 } catch (error) {
                     this.log(`Error polling for payment status: ${error.message}`, error);
                     console.error('Error checking payment status:', error);
-                    setTimeout(checkPaymentStatus, 5000); // Retry with longer interval on error
+                    this.paymentPollTimeout = setTimeout(checkPaymentStatus, 5000); // Retry with longer interval on error
                 }
             };
             
@@ -2212,6 +2251,9 @@
                 this.countdownInterval = null;
                 this.log('Countdown timer cleared');
             }
+
+            // Stop any in-flight payment-status polling.
+            this.stopPaymentPolling();
             
             // Show success icon
             const successContainer = document.getElementById('blink-pay-success');
@@ -2252,6 +2294,12 @@
             
             // Add new event listener to reset the widget
             newButton.addEventListener('click', () => {
+                // Stop any stale polling/countdown from the completed invoice.
+                this.stopPaymentPolling();
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                    this.countdownInterval = null;
+                }
                 // Reset the widget back to initial state
                 successContainer.classList.remove('blink-pay-show');
                 successContainer.style.visibility = 'hidden';
@@ -2583,7 +2631,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.3.0');
+            params.append('widget_version', '1.3.1');
             
             return `${baseUrl}?${params.toString()}`;
         }
