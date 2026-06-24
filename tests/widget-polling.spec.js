@@ -8,6 +8,11 @@
  * stopPaymentPolling() for reset/success cleanup.
  *
  * Uses fake timers to advance through poll cycles without real waiting.
+ *
+ * Also covers the cancellation race (PR #5 review): if a stop/reset happens while
+ * a poll request is already in flight, the loop must NOT resume when that request
+ * later resolves. Cancellation is enforced by a generation token bumped in
+ * nextPollGeneration()/stopPaymentPolling().
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -23,6 +28,16 @@ function loadWidget() {
     return window.BlinkPayButton;
 }
 
+// A promise whose resolve is exposed so a test can interleave other work (e.g.
+// stopPaymentPolling) between the await starting and the request resolving.
+function deferred() {
+    let resolve;
+    const promise = new Promise((res) => {
+        resolve = res;
+    });
+    return { promise, resolve };
+}
+
 let widget;
 
 beforeEach(() => {
@@ -31,6 +46,7 @@ beforeEach(() => {
     widget.log = () => {};
     widget.paymentPollTimeout = null;
     widget.invoiceExpiresAt = null;
+    widget.pollGeneration = 0;
     // handlePaymentSuccess touches the DOM; stub it so polling tests stay focused.
     widget.handlePaymentSuccess = vi.fn();
 });
@@ -118,5 +134,91 @@ describe('stopPaymentPolling', () => {
 
         await vi.advanceTimersByTimeAsync(10000);
         expect(verify.mock.calls.length).toBe(callsBeforeStop); // no more polls
+    });
+});
+
+describe('stop-while-a-poll-is-in-flight (cancellation race, PR #5 review)', () => {
+    it('pollVerifyStatus does not resume after stop if the in-flight verify resolves unpaid', async () => {
+        const d = deferred();
+        const verify = vi.fn().mockReturnValueOnce(d.promise);
+        widget.getLnurl = () => ({ verifyLnurlPayment: verify });
+        widget.invoiceExpiresAt = Date.now() + 60000;
+
+        widget.pollVerifyStatus('https://blink.sv/verify/h');
+        // The first check() has run and is now awaiting verify (request in flight).
+        expect(verify).toHaveBeenCalledTimes(1);
+
+        // Stop (e.g. success/reset elsewhere) while the request is still pending.
+        widget.stopPaymentPolling();
+
+        // Now the in-flight request resolves as unpaid.
+        d.resolve({ settled: false });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // It must NOT have scheduled another poll.
+        expect(widget.paymentPollTimeout).toBeNull();
+        await vi.advanceTimersByTimeAsync(30000);
+        expect(verify).toHaveBeenCalledTimes(1);
+    });
+
+    it('pollPaymentStatus does not resume after stop if the in-flight request resolves PENDING', async () => {
+        const d = deferred();
+        // First fetch is the in-flight request; resolve to a PENDING status.
+        const fetchMock = vi.fn().mockReturnValueOnce(
+            d.promise.then(() => ({
+                json: async () => ({ data: { lnInvoicePaymentStatus: { status: 'PENDING' } } }),
+            }))
+        );
+        window.fetch = fetchMock;
+        global.fetch = fetchMock;
+        widget.invoiceExpiresAt = Date.now() + 60000;
+
+        widget.pollPaymentStatus('lnbc1invoice');
+        expect(fetchMock).toHaveBeenCalledTimes(1); // in flight
+
+        // Stop while the request is pending.
+        widget.stopPaymentPolling();
+
+        // Resolve the in-flight request as unpaid.
+        d.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(widget.paymentPollTimeout).toBeNull();
+        await vi.advanceTimersByTimeAsync(30000);
+        expect(fetchMock).toHaveBeenCalledTimes(1); // loop did not resume
+
+        delete window.fetch;
+        delete global.fetch;
+    });
+
+    it('starting a new poll supersedes a previously in-flight loop', async () => {
+        const d1 = deferred();
+        const verify = vi
+            .fn()
+            .mockReturnValueOnce(d1.promise) // first (old) loop's in-flight request
+            .mockResolvedValue({ settled: false }); // second (new) loop
+        widget.getLnurl = () => ({ verifyLnurlPayment: verify });
+        widget.invoiceExpiresAt = Date.now() + 60000;
+
+        widget.pollVerifyStatus('https://blink.sv/verify/a'); // old loop, gen N
+        widget.pollVerifyStatus('https://blink.sv/verify/b'); // new loop, gen N+1
+
+        const callsAfterStart = verify.mock.calls.length;
+
+        // The old loop's request now resolves; it must not reschedule (stale gen).
+        d1.resolve({ settled: false });
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // Stop the active (new) loop so the test doesn't poll unbounded.
+        widget.stopPaymentPolling();
+        await vi.advanceTimersByTimeAsync(10000);
+
+        // The old loop never produced an extra scheduled call beyond what the new
+        // loop accounts for; key assertion is no runaway growth.
+        expect(verify.mock.calls.length).toBe(callsAfterStart);
     });
 });

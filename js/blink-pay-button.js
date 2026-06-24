@@ -1,7 +1,10 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.3.2 - Friendly "username not found" message: a non-existent Blink
+ * Version: 1.3.3 - Make payment-poll cancellation race-safe: a generation token
+ *                  ensures a poll loop cannot resume after stop/reset when its
+ *                  request was already in flight (would otherwise poll unbounded).
+ *          1.3.2 - Friendly "username not found" message: a non-existent Blink
  *                  username now shows a clear donor-facing error instead of the
  *                  raw "LNURL endpoint returned 404" technical message.
  *          1.3.1 - Bound payment-status polling to the invoice expiry so the
@@ -1631,6 +1634,9 @@
         pollVerifyStatus: function(verifyUrl) {
             const lnurl = this.getLnurl();
             this.log('Starting LUD-21 verify polling');
+            // Capture this loop's generation; starting a new poll supersedes any
+            // previous in-flight loop.
+            const myGen = this.nextPollGeneration();
             const check = async () => {
                 this.paymentPollTimeout = null;
                 // Stop once the invoice has expired (bounded by displayInvoice's
@@ -1641,6 +1647,12 @@
                 }
                 try {
                     const result = await lnurl.verifyLnurlPayment(verifyUrl);
+                    // The request may have resolved after a stop/reset or a newer
+                    // poll started; if so, do not act or reschedule.
+                    if (this.pollGeneration !== myGen) {
+                        this.log('LUD-21 verify poll superseded; stopping');
+                        return;
+                    }
                     if (result && result.settled === true) {
                         this.log('Payment confirmed via LUD-21 verify! 🎉');
                         this.handlePaymentSuccess();
@@ -1649,6 +1661,7 @@
                     this.paymentPollTimeout = setTimeout(check, 2000);
                 } catch (error) {
                     this.log(`Error polling verify status: ${error.message}`, error);
+                    if (this.pollGeneration !== myGen) return; // superseded
                     this.paymentPollTimeout = setTimeout(check, 5000); // back off on error
                 }
             };
@@ -1661,8 +1674,24 @@
             return typeof this.invoiceExpiresAt === 'number' && Date.now() >= this.invoiceExpiresAt;
         },
 
+        // Begin a new payment-poll "generation" and return its token. Each poll
+        // loop captures this; a loop only schedules its next tick while its token
+        // is still current. Starting a new poll or stopping bumps the counter,
+        // which immediately invalidates (cancels) any other in-flight loop.
+        //
+        // This is the authoritative cancellation mechanism: clearTimeout alone is
+        // racy because a poll request resolving mid-flight re-arms the timer after
+        // stopPaymentPolling() has already run (the timeout was null at that point).
+        nextPollGeneration: function() {
+            this.pollGeneration = (this.pollGeneration || 0) + 1;
+            return this.pollGeneration;
+        },
+
         // Stop any in-flight payment-status poll and clear the invoice deadline.
+        // Bumping the generation cancels a loop even if its request is already
+        // awaiting (it will see a stale token after the await and not reschedule).
         stopPaymentPolling: function() {
+            this.nextPollGeneration();
             if (this.paymentPollTimeout) {
                 clearTimeout(this.paymentPollTimeout);
                 this.paymentPollTimeout = null;
@@ -2202,6 +2231,9 @@
         // Polling fallback for payment status
         pollPaymentStatus: function(paymentRequest) {
             this.log(`Starting payment status polling for invoice`);
+            // Capture this loop's generation; starting a new poll supersedes any
+            // previous in-flight loop.
+            const myGen = this.nextPollGeneration();
             const checkPaymentStatus = async () => {
                 this.paymentPollTimeout = null;
                 // Stop once the invoice has expired so we don't poll forever.
@@ -2238,7 +2270,14 @@
                     
                     const data = await response.json();
                     this.log(`Poll response received`, data);
-                    
+
+                    // The request may have resolved after a stop/reset or a newer
+                    // poll started; if so, do not act or reschedule.
+                    if (this.pollGeneration !== myGen) {
+                        this.log('Payment status poll superseded; stopping');
+                        return;
+                    }
+
                     if (data.data && data.data.lnInvoicePaymentStatus) {
                         const status = data.data.lnInvoicePaymentStatus.status;
                         this.log(`Payment status: ${status}`);
@@ -2257,6 +2296,7 @@
                 } catch (error) {
                     this.log(`Error polling for payment status: ${error.message}`, error);
                     console.error('Error checking payment status:', error);
+                    if (this.pollGeneration !== myGen) return; // superseded
                     this.paymentPollTimeout = setTimeout(checkPaymentStatus, 5000); // Retry with longer interval on error
                 }
             };
@@ -2655,7 +2695,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.3.2');
+            params.append('widget_version', '1.3.3');
             
             return `${baseUrl}?${params.toString()}`;
         }
