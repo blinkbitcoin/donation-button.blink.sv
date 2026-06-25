@@ -1,5 +1,6 @@
-# Local-only working plan (not for publication)
+# Local-only working plans (not for publication)
 button_spark_plan.md
+button_cleanup_plan.md
 
 # Node / test tooling (added with the Vitest test harness)
 node_modules/
