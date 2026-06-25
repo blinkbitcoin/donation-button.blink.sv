@@ -188,40 +188,45 @@ You can customize the appearance with CSS:
 
 ### Prerequisites
 
-- Node.js 16+ and npm
 - A [Blink](https://blink.sv/) account
+- Node.js 18+ and npm (only required to run the tests; the widget itself has no build step)
 
 ### Setup
 
+This is a **static, no-build** project — the source files are served as-is. There is no
+bundler and no backend.
+
 1. Clone the repository:
 ```bash
-git clone https://github.com/pretyflaco/blink-donation-widget.git
-cd blink-donation-widget
+git clone https://github.com/blinkbitcoin/donation-button.blink.sv.git
+cd donation-button.blink.sv
 ```
 
-2. Install dependencies:
+2. Open the generator locally. Either open `index.html` directly in a browser, or serve
+   the directory with any static file server, for example:
+```bash
+python3 -m http.server 8000   # then open http://localhost:8000
+```
+
+3. (Optional) Install dev dependencies to run the test suite:
 ```bash
 npm install
+npm test
 ```
-
-3. Start development server:
-```bash
-npm start
-```
-
-4. Open [http://localhost:3000](http://localhost:3000)
 
 ### Project Structure
 
 ```
-├── public/
-│   ├── index.html              # Widget generator interface
-│   │   ├── js/
-│   │   │   ├── blink-pay-button.js # Main widget code
-│   │   │   └── generator.js        # Generator interface logic
-│   │   └── img/                    # Assets (logos, icons)
-│   ├── package.json                # Dependencies and scripts
-│   └── server.js                   # Development server
+├── index.html                  # Widget generator interface
+├── js/
+│   ├── blink-pay-button.js     # Main widget code (the single embedded file)
+│   ├── blink-lnurl.js          # LNURL-pay (LUD-16) + LUD-21 verify helpers (UMD)
+│   └── generator.js            # Generator interface logic
+├── img/                        # Assets (logos, icons, meta images)
+├── tests/                      # Vitest + jsdom specs
+├── *-test.html                 # Manual smoke/test pages (e.g. spark-test.html)
+├── .github/workflows/          # CI (runs npm ci && npm test)
+├── package.json                # Dev dependencies and test scripts
 └── README.md                   # This file
 ```
 
@@ -260,7 +265,7 @@ This project is licensed under the GNU Affero General Public License v3.0 (AGPL-
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/pretyflaco/blink-donation-widget/issues)
+- **Issues**: [GitHub Issues](https://github.com/blinkbitcoin/donation-button.blink.sv/issues)
 - **Documentation**: [Widget Generator](https://blinkbitcoin.github.io/donation-button.blink.sv/)
 - **Blink Support**: [Blink Developer Docs](https://dev.blink.sv/)
 
