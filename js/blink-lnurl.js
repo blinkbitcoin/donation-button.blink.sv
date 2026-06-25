@@ -20,7 +20,6 @@
   // UMD: attach to window/globalThis as `BlinkLnurl` for the browser <script>
   // path, and expose CommonJS/ESM exports for the test runner.
   const api = factory();
-  // eslint-disable-next-line no-undef
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = api;
   }

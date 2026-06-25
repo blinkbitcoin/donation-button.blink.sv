@@ -16,7 +16,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 export function loadUmd(relativePath) {
   const src = readFileSync(resolve(here, relativePath), 'utf8');
   const moduleObj = { exports: {} };
-  // eslint-disable-next-line no-new-func
   const run = new Function('module', 'exports', 'globalThis', src);
   run(moduleObj, moduleObj.exports, globalThis);
   return moduleObj.exports;

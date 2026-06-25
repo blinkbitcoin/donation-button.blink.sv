@@ -1,15 +1,22 @@
 {
   "name": "blink-donation-button",
-  "version": "1.3.0",
+  "version": "1.3.3",
   "description": "Blink Pay Button donation widget — tests for custodial + self-custodial (Spark) receive.",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --check \"js/**/*.js\" \"tests/**/*.js\" \"*.config.js\"",
+    "format:fix": "prettier --write \"js/**/*.js\" \"tests/**/*.js\" \"*.config.js\""
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^17.7.0",
     "jsdom": "^25.0.1",
+    "prettier": "^3.8.4",
     "vitest": "^4.0.0"
   }
 }

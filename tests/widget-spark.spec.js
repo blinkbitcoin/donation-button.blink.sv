@@ -27,7 +27,6 @@ const widgetSrc = readFileSync(
 // Load the widget IIFE into the current (jsdom) realm so it assigns
 // window.BlinkPayButton. Runs once; the object is stateless for our purposes.
 function loadWidget() {
-  // eslint-disable-next-line no-new-func
   const run = new Function(widgetSrc);
   run();
   return window.BlinkPayButton;
