@@ -85,6 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (headerLogo) {
                 headerLogo.src = 'img/blink-light.svg';
             }
+            // Re-apply accessible label after innerHTML swap (now in light mode)
+            themeToggle.setAttribute('aria-label', 'Switch to dark mode');
+            themeToggle.setAttribute('title', 'Switch to dark mode');
         } else {
             body.classList.remove('light-mode');
             body.classList.add('dark-mode');
@@ -92,6 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (headerLogo) {
                 headerLogo.src = 'img/blink-dark.svg';
             }
+            // Re-apply accessible label after innerHTML swap (now in dark mode)
+            themeToggle.setAttribute('aria-label', 'Switch to light mode');
+            themeToggle.setAttribute('title', 'Switch to light mode');
         }
     });
     
@@ -572,6 +578,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.dispatchEvent(new Event('input', { bubbles: true }));
             }, 500); // 500ms delay
         }
+
+        // Live preview: once the user has generated at least once (result is visible),
+        // keep the preview and generated code in sync as the username changes.
+        // This is a local-only refresh — the async existence check stays gated behind
+        // Generate / Enter, so we don't hit the network on every keystroke.
+        if (resultContainer.style.display === 'block') {
+            clearTimeout(this.previewTimeout);
+            this.previewTimeout = setTimeout(() => {
+                const nextUsername = cleanUsernameInput(blinkUsernameInput.value);
+                if (nextUsername && nextUsername !== currentUsername) {
+                    currentUsername = nextUsername;
+                    updateGeneratedCode();
+                    updateWidgetPreview();
+                }
+            }, 500);
+        }
     });
     
     // Button width input event listener
@@ -579,5 +601,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const value = parseInt(this.value);
         currentButtonWidth = value && value >= 200 && value <= 500 ? value : null;
         updateWidgetPreview();
+        updateGeneratedCode();
     });
 }); 
