@@ -1,0 +1,10 @@
+# Local-only working plan (not for publication)
+button_spark_plan.md
+
+# Node / test tooling (added with the Vitest test harness)
+node_modules/
+coverage/
+
+# Editor / OS noise
+.DS_Store
+*.log

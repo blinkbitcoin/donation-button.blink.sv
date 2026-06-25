@@ -256,7 +256,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // usernameAvailable: true means username does NOT exist
             // usernameAvailable: false means username DOES exist
-            return !data.data.usernameAvailable;
+            if (!data.data.usernameAvailable) {
+                return true; // exists as a custodial Blink username
+            }
+
+            // Self-custodial (Spark) fallback: a Spark user has a registered Blink
+            // Lightning address but may report as "available" via usernameAvailable.
+            // Probe the LNURL-pay endpoint; a valid payRequest means the address
+            // exists and is payable, so generation should proceed.
+            const existsViaLnurl = await checkBlinkLnAddressExists(username);
+            return existsViaLnurl;
             
         } catch (error) {
             console.error('Error checking username:', error);
@@ -265,6 +274,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw error;
             }
             // On other errors, allow generation to proceed (assume username exists)
+            return true;
+        }
+    }
+
+    // Self-custodial (Spark) existence probe via LNURL-pay (LUD-16).
+    // Returns true if `username@blink.sv` resolves to a valid payRequest.
+    async function checkBlinkLnAddressExists(username) {
+        try {
+            const endpoint = `https://blink.sv/.well-known/lnurlp/${encodeURIComponent(username)}`;
+            const response = await fetch(endpoint, { headers: { Accept: 'application/json' } });
+            if (!response.ok) {
+                return false;
+            }
+            const data = await response.json();
+            return data && data.tag === 'payRequest' && Boolean(data.callback);
+        } catch (lnurlError) {
+            console.error('Error probing Blink Lightning address:', lnurlError);
+            // Network/other error: don't block generation.
             return true;
         }
     }

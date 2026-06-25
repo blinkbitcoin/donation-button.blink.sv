@@ -1,7 +1,8 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.2.3 - Reduced button font size by 2pts for better appearance
+ * Version: 1.3.0 - Self-custodial (Spark) receive via Lightning address (LNURL-pay
+ *                  custodial-first fallback + LUD-21 verify). Custodial flow unchanged.
  */
 (function() {
     // Translation objects for multi-language support
@@ -1401,14 +1402,23 @@
                 try {
                     this.log(`Processing donation: ${amount} ${this.selectedCurrency}`);
                     
-                    // Step 1: Get wallet information
+                    // Step 1: Get wallet information (custodial-first).
                     this.log('About to call getAccountDefaultWallet');
                     if (typeof this.getAccountDefaultWallet !== 'function') {
                         throw new Error('getAccountDefaultWallet is not a function - this context may be lost');
                     }
                     const walletInfo = await this.getAccountDefaultWallet(this.username);
+
+                    // SELF-CUSTODIAL (Spark) FALLBACK:
+                    // A self-custodial Blink (Spark) user has no custodial wallet, so
+                    // accountDefaultWallet returns no id. Fall back to the Lightning
+                    // address (LNURL-pay) path: invoice directly on `username@blink.sv`
+                    // and detect settlement via LUD-21 verify. Funds land in the user's
+                    // current default account (handled server-side by the LNURL server).
                     if (!walletInfo || !walletInfo.id) {
-                        throw new Error('Could not retrieve wallet information for this username');
+                        this.log('No custodial wallet; trying self-custodial (Spark) LN-address path');
+                        await this.handleSelfCustodialDonate(amount);
+                        return;
                     }
                     this.log(`Retrieved wallet info:`, walletInfo);
                     
@@ -1460,6 +1470,157 @@
             }
         },
         
+        // Resolve the BlinkLnurl helper module. When the widget is embedded as a
+        // single <script> (the common case), js/blink-lnurl.js is not separately
+        // loaded, so we fall back to an inline, behaviour-identical copy of the
+        // few helpers we need. The canonical, unit-tested implementation lives in
+        // js/blink-lnurl.js (see tests/).
+        getLnurl: function() {
+            if (typeof window !== 'undefined' && window.BlinkLnurl) {
+                return window.BlinkLnurl;
+            }
+            if (this._inlineLnurl) return this._inlineLnurl;
+
+            const ALLOWED_BLINK_DOMAINS = ['blink.sv'];
+            const self = this;
+            const inline = {
+                ALLOWED_BLINK_DOMAINS: ALLOWED_BLINK_DOMAINS,
+                isBlinkLightningAddress: function(address) {
+                    if (!address || typeof address !== 'string') return false;
+                    const domain = address.includes('@') ? address.split('@')[1] : address;
+                    return ALLOWED_BLINK_DOMAINS.includes((domain || '').trim().toLowerCase());
+                },
+                normalizeBlinkLightningAddress: function(input) {
+                    if (!input || typeof input !== 'string') throw new Error('Username is required');
+                    let value = input.trim();
+                    if (value.toLowerCase().startsWith('lightning:')) {
+                        value = value.slice('lightning:'.length).trim();
+                    }
+                    if (value.includes('@')) {
+                        const parts = value.split('@');
+                        if (parts.length !== 2 || !parts[0] || !parts[1]) {
+                            throw new Error('Invalid Lightning address format: ' + input);
+                        }
+                        const domain = parts[1].toLowerCase();
+                        if (!ALLOWED_BLINK_DOMAINS.includes(domain)) {
+                            throw new Error("'" + input + "' is not a Blink address. Only " + ALLOWED_BLINK_DOMAINS[0] + ' addresses are supported.');
+                        }
+                        return parts[0] + '@' + domain;
+                    }
+                    return value + '@' + ALLOWED_BLINK_DOMAINS[0];
+                },
+                getInvoiceFromLightningAddress: async function(lightningAddress, amountSats, memo) {
+                    if (!inline.isBlinkLightningAddress(lightningAddress)) {
+                        throw new Error("'" + lightningAddress + "' is not a Blink address.");
+                    }
+                    const parts = lightningAddress.split('@');
+                    const lnurlEndpoint = 'https://' + parts[1].toLowerCase() + '/.well-known/lnurlp/' + parts[0];
+                    const metaResp = await fetch(lnurlEndpoint, { headers: { Accept: 'application/json' } });
+                    if (!metaResp.ok) throw new Error('LNURL endpoint returned ' + metaResp.status);
+                    const meta = await metaResp.json();
+                    if (meta.tag !== 'payRequest' || !meta.callback) throw new Error('Invalid LNURL pay response');
+                    if (typeof meta.minSendable !== 'number' || typeof meta.maxSendable !== 'number') {
+                        throw new Error('LNURL response missing min/max sendable amounts');
+                    }
+                    const amountMsats = Math.round(amountSats) * 1000;
+                    if (amountMsats < meta.minSendable) {
+                        throw new Error('Amount ' + amountSats + ' sats is below minimum ' + Math.ceil(meta.minSendable / 1000) + ' sats');
+                    }
+                    if (amountMsats > meta.maxSendable) {
+                        throw new Error('Amount ' + amountSats + ' sats exceeds maximum ' + Math.floor(meta.maxSendable / 1000) + ' sats');
+                    }
+                    let comment = memo || '';
+                    const commentAllowed = meta.commentAllowed || 0;
+                    if (commentAllowed > 0 && comment.length > commentAllowed) comment = comment.substring(0, commentAllowed);
+                    else if (commentAllowed === 0) comment = '';
+                    const url = new URL(meta.callback);
+                    url.searchParams.set('amount', String(amountMsats));
+                    if (comment) url.searchParams.set('comment', comment);
+                    const cbResp = await fetch(url.toString(), { headers: { Accept: 'application/json' } });
+                    if (!cbResp.ok) throw new Error('LNURL callback returned ' + cbResp.status);
+                    const cb = await cbResp.json();
+                    if (cb.status === 'ERROR') throw new Error('LNURL error: ' + (cb.reason || 'Unknown error'));
+                    if (!cb.pr) throw new Error('LNURL callback did not return a payment request');
+                    return { paymentRequest: cb.pr, verifyUrl: cb.verify };
+                },
+                verifyLnurlPayment: async function(verifyUrl) {
+                    const resp = await fetch(verifyUrl, { headers: { Accept: 'application/json' } });
+                    if (!resp.ok) throw new Error('LNURL verify returned ' + resp.status);
+                    const data = await resp.json();
+                    if (data.status === 'ERROR') throw new Error('LNURL verify error: ' + (data.reason || 'Unknown error'));
+                    return { settled: data.settled === true, preimage: data.preimage == null ? undefined : data.preimage, pr: data.pr };
+                },
+            };
+            void self;
+            this._inlineLnurl = inline;
+            return inline;
+        },
+
+        // Self-custodial (Spark) donation path: invoice on the merchant's Blink
+        // Lightning address via LNURL-pay, then detect settlement via LUD-21
+        // verify polling. Always denominated in sats (Spark is BTC-only).
+        handleSelfCustodialDonate: async function(amount) {
+            const lnurl = this.getLnurl();
+
+            // Build the bare blink.sv Lightning address (rejects non-Blink domains).
+            // Bare address => funds land in the user's current default account
+            // (server-side default-wallet routing).
+            const lightningAddress = lnurl.normalizeBlinkLightningAddress(this.username);
+
+            // Spark/Blink receive in sats; convert the selected display currency.
+            const satsAmount = this.convertToSatoshis(amount, this.selectedCurrency);
+            this.log('Self-custodial: requesting LN-address invoice', { lightningAddress, satsAmount });
+
+            const memo = `${this.username} donation button`;
+            const invoice = await lnurl.getInvoiceFromLightningAddress(
+                lightningAddress,
+                satsAmount,
+                memo
+            );
+            if (!invoice || !invoice.paymentRequest) {
+                throw new Error('Could not create invoice');
+            }
+            this.log('Self-custodial invoice created (direct, no escrow)', {
+                paymentRequest: invoice.paymentRequest.substring(0, 30) + '...',
+                hasVerify: Boolean(invoice.verifyUrl),
+            });
+
+            // LN-address invoices default to a 15-minute expiry on the Blink LNURL server.
+            const expiryMinutes = 15;
+            this.displayInvoice(invoice.paymentRequest, expiryMinutes);
+
+            if (invoice.verifyUrl) {
+                this.pollVerifyStatus(invoice.verifyUrl);
+            } else {
+                // No verify URL advertised: fall back to the Blink GraphQL poll,
+                // which still works for invoices the Blink backend can observe.
+                this.log('No LUD-21 verify URL; falling back to GraphQL payment polling');
+                this.pollPaymentStatus(invoice.paymentRequest);
+            }
+        },
+
+        // Poll a LUD-21 verify URL until the invoice is settled (Spark path).
+        // Bounded in practice by the invoice expiry countdown shown to the donor.
+        pollVerifyStatus: function(verifyUrl) {
+            const lnurl = this.getLnurl();
+            this.log('Starting LUD-21 verify polling');
+            const check = async () => {
+                try {
+                    const result = await lnurl.verifyLnurlPayment(verifyUrl);
+                    if (result && result.settled === true) {
+                        this.log('Payment confirmed via LUD-21 verify! 🎉');
+                        this.handlePaymentSuccess();
+                        return; // stop polling
+                    }
+                    setTimeout(check, 2000);
+                } catch (error) {
+                    this.log(`Error polling verify status: ${error.message}`, error);
+                    setTimeout(check, 5000); // back off on error
+                }
+            };
+            check();
+        },
+
         // Get the default wallet information for a username
         getAccountDefaultWallet: async function(username) {
             const query = `
@@ -1491,19 +1652,27 @@
                 const data = await response.json();
                 this.log(`API response for accountDefaultWallet`, data);
                 
-                if (data.errors) {
-                    throw new Error(data.errors[0].message || 'Error fetching wallet information');
+                // A self-custodial (Spark) username has no custodial wallet, so the
+                // API returns an error (or a null wallet) here. Treat that as "no
+                // custodial wallet" and return { id: null } so the caller falls back
+                // to the self-custodial Lightning-address (LNURL-pay) path instead of
+                // failing the donation.
+                if (data.errors || !data.data || !data.data.accountDefaultWallet?.id) {
+                    this.log('No custodial default wallet for username (likely self-custodial/Spark)');
+                    return { id: null, currency: null };
                 }
                 
                 return {
-                    id: data.data.accountDefaultWallet?.id,
-                    currency: data.data.accountDefaultWallet?.currency
+                    id: data.data.accountDefaultWallet.id,
+                    currency: data.data.accountDefaultWallet.currency
                 };
                 
             } catch (error) {
+                // Network/transport error. Return no-wallet so the self-custodial
+                // fallback can still attempt the LNURL path.
                 this.log(`API error for accountDefaultWallet: ${error.message}`, error);
                 console.error('Error getting wallet information:', error);
-                throw error;
+                return { id: null, currency: null };
             }
         },
         
@@ -2414,7 +2583,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.2.3');
+            params.append('widget_version', '1.3.0');
             
             return `${baseUrl}?${params.toString()}`;
         }
