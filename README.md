@@ -12,6 +12,7 @@ A lightweight, embeddable Bitcoin Lightning donation widget that integrates with
 - **🔧 Easy Integration**: Simple embed code - just copy and paste
 - **💸 Low Fees**: Leverage Blink's competitive Lightning Network fees
 - **🌐 No Backend Required**: Pure frontend solution, no server needed
+- **🔒 Private QR codes**: QR codes are generated **client-side** (no third-party image service), so invoices are never sent to an external server
 - **📝 Memo Support**: Automatic memo generation with username
 - **📊 Analytics Tracking**: Built-in referral tracking to help Blink understand widget usage
 
