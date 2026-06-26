@@ -200,4 +200,40 @@ describe('onError', () => {
         expect(arg.message).toBe('wallet lookup failed');
         expect(arg.error).toBe(boom);
     });
+
+    it('fires when the exchange-rate lookup fails for a fiat currency', async () => {
+        const onError = vi.fn();
+        initWidget({ onError });
+
+        // Fiat display currency with no cached rate forces a fetchExchangeRate call
+        // in handleDonate before any wallet lookup; make it reject.
+        const rateError = new Error('rate fetch failed');
+        widget.selectedCurrency = 'EUR';
+        widget.exchangeRates = {};
+        widget.fetchExchangeRate = vi.fn(() => Promise.reject(rateError));
+
+        document.getElementById('blink-pay-amount').value = '5';
+
+        await widget.handleDonate();
+
+        expect(widget.fetchExchangeRate).toHaveBeenCalledWith('EUR');
+        expect(onError).toHaveBeenCalledTimes(1);
+        const arg = onError.mock.calls[0][0];
+        expect(arg.message).toBe('rate fetch failed');
+        expect(arg.error).toBe(rateError);
+    });
+
+    it('does NOT fire on input-validation failures (UI-only)', async () => {
+        const onError = vi.fn();
+        initWidget({ onError });
+
+        // amount <= 0 is rejected by validation, which shows a UI error and returns
+        // early WITHOUT firing onError (documented boundary).
+        widget.selectedCurrency = 'sats';
+        document.getElementById('blink-pay-amount').value = '0';
+
+        await widget.handleDonate();
+
+        expect(onError).not.toHaveBeenCalled();
+    });
 });

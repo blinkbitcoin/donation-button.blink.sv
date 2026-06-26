@@ -4,7 +4,9 @@
  * Version: 1.4.0 - Optional embedder lifecycle callbacks (onSuccess/onError/
  *                  onTimeout). Additive only; existing public API unchanged.
  *                  Callbacks are invoked via a try/catch-wrapped fireCallback so a
- *                  throwing embedder handler can never break the widget.
+ *                  throwing embedder handler can never break the widget. onError
+ *                  also covers exchange-rate lookup failures (not just invoice/
+ *                  processing errors); input-validation errors stay UI-only.
  *          1.3.3 - Make payment-poll cancellation race-safe: a generation token
  *                  ensures a poll loop cannot resume after stop/reset when its
  *                  request was already in flight (would otherwise poll unbounded).
@@ -1424,7 +1426,11 @@
                             await this.fetchExchangeRate(this.selectedCurrency);
                             exchangeRates = this.exchangeRates[this.selectedCurrency];
                         } catch (error) {
-                            return; // Error already shown in fetchExchangeRate
+                            // Error UI already shown in fetchExchangeRate. This is a
+                            // failed donation attempt (not input validation), so notify
+                            // the embedder before bailing out.
+                            this.fireCallback('onError', { error, message: error.message });
+                            return;
                         }
                     }
                 }
