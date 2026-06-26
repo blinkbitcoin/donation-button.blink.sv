@@ -114,6 +114,71 @@ describe('displayInvoice QR rendering', () => {
     });
 });
 
+describe('displayInvoice QR-generation failure fallback', () => {
+    function setNavigatorClipboard(writeText) {
+        Object.defineProperty(global.navigator, 'clipboard', {
+            value: { writeText },
+            configurable: true,
+        });
+    }
+
+    it('does not render a broken <img> when generation fails', () => {
+        vi.useFakeTimers();
+        widget.buildQrDataUrl = () => null;
+        widget.displayInvoice('lnbc1pnoqr', 15);
+
+        const qr = document.getElementById('blink-pay-qr');
+        const img = qr.querySelector('img');
+        // Either no <img>, or none with a srcless/broken source.
+        expect(img).toBeNull();
+    });
+
+    it('shows a visible error and the invoice as selectable text', () => {
+        vi.useFakeTimers();
+        const pr = 'lnbc1pfallbacktext';
+        widget.buildQrDataUrl = () => null;
+        widget.displayInvoice(pr, 15);
+
+        const fallback = document.getElementById('blink-pay-qr-fallback');
+        expect(fallback).not.toBeNull();
+
+        // Error line present and non-empty.
+        expect(fallback.textContent.trim().length).toBeGreaterThan(0);
+
+        // The payment request is present as selectable text.
+        const textarea = fallback.querySelector('textarea');
+        expect(textarea).not.toBeNull();
+        expect(textarea.value).toBe(pr);
+    });
+
+    it('exposes a Copy button that copies the payment request', () => {
+        vi.useFakeTimers();
+        const pr = 'lnbc1pfallbackcopy';
+        const writeText = vi.fn().mockResolvedValue(undefined);
+        setNavigatorClipboard(writeText);
+
+        widget.buildQrDataUrl = () => null;
+        widget.displayInvoice(pr, 15);
+
+        const fallback = document.getElementById('blink-pay-qr-fallback');
+        const button = fallback.querySelector('button');
+        expect(button).not.toBeNull();
+
+        button.click();
+        expect(writeText).toHaveBeenCalledWith(pr);
+    });
+
+    it('still reveals the QR container so the fallback is visible', () => {
+        vi.useFakeTimers();
+        widget.buildQrDataUrl = () => null;
+        widget.displayInvoice('lnbc1pvisible', 15);
+
+        const qr = document.getElementById('blink-pay-qr');
+        expect(qr.classList.contains('blink-pay-show')).toBe(true);
+        expect(qr.style.visibility).toBe('visible');
+    });
+});
+
 describe('no third-party QR service', () => {
     it('source contains no api.qrserver.com calls', () => {
         // Allow descriptive comments mentioning the former dependency, but no

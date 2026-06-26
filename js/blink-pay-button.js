@@ -1993,57 +1993,89 @@
             // Store interval for cleanup
             this.countdownInterval = countdownInterval;
             
-            // Generate the QR code locally (no third-party request). Falls back to a
-            // text error node if generation somehow fails.
-            this.log('Generating QR code client-side');
-            const qrDataUrl = this.buildQrDataUrl(paymentRequest);
-
-            const qrImage = document.createElement('img');
-            if (qrDataUrl) {
-                qrImage.src = qrDataUrl;
-            }
-            qrImage.alt = this.t('qrCodeAlt');
-            
-            // Add click-to-copy functionality to QR code
-            qrImage.style.cursor = 'pointer';
-            qrImage.style.transition = 'opacity 0.2s ease';
-            qrImage.title = 'Click to copy payment request';
-            
-            qrImage.addEventListener('click', () => {
-                // Visual feedback on click
-                qrImage.style.opacity = '0.7';
-                setTimeout(() => {
-                    qrImage.style.opacity = '1';
-                }, 200);
-                
-                // Copy payment request to clipboard and show status message
+            // Shared copy-to-clipboard handler used by both the QR image and the
+            // text fallback's Copy button, so the donor can always copy the invoice.
+            const copyPaymentRequest = () => {
                 navigator.clipboard.writeText(paymentRequest).then(() => {
                     this.showStatus('success', this.t('invoiceCopied'));
-                    
-                    // Create and show prominent notification above QR code
                     this.showQrNotification(this.t('invoiceCopied'));
-                    
-                    // Auto-hide the status message after 2 seconds
                     setTimeout(() => {
                         this.showStatus('', '');
                     }, 2000);
                 }).catch(err => {
-                    console.error('Could not copy invoice from QR: ', err);
+                    console.error('Could not copy invoice: ', err);
                     this.showStatus('error', this.t('failedToCopy'));
-                    
-                    // Show error notification above QR code
                     this.showQrNotification(this.t('failedToCopy'), true);
-                    
-                    // Auto-hide error after 3 seconds
                     setTimeout(() => {
                         this.showStatus('', '');
                     }, 3000);
                 });
-            });
-            
+            };
+
+            // Generate the QR code locally (no third-party request). If generation
+            // fails (buildQrDataUrl returns null), fall back to a visible error plus
+            // the invoice as selectable text and a Copy button, so the donor can
+            // still pay without a scannable QR.
+            this.log('Generating QR code client-side');
+            const qrDataUrl = this.buildQrDataUrl(paymentRequest);
+
             qrContainer.innerHTML = '';
             qrContainer.appendChild(countdownElement);
-            qrContainer.appendChild(qrImage);
+
+            if (qrDataUrl) {
+                const qrImage = document.createElement('img');
+                qrImage.src = qrDataUrl;
+                qrImage.alt = this.t('qrCodeAlt');
+
+                // Add click-to-copy functionality to QR code
+                qrImage.style.cursor = 'pointer';
+                qrImage.style.transition = 'opacity 0.2s ease';
+                qrImage.title = 'Click to copy payment request';
+
+                qrImage.addEventListener('click', () => {
+                    // Visual feedback on click
+                    qrImage.style.opacity = '0.7';
+                    setTimeout(() => {
+                        qrImage.style.opacity = '1';
+                    }, 200);
+                    copyPaymentRequest();
+                });
+
+                qrContainer.appendChild(qrImage);
+            } else {
+                // QR generation failed — render a usable text fallback.
+                this.log('QR generation failed; rendering text fallback');
+                const fallback = document.createElement('div');
+                fallback.id = 'blink-pay-qr-fallback';
+                fallback.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:8px; max-width:100%;';
+
+                const errorLine = document.createElement('div');
+                errorLine.textContent = this.t('anErrorOccurred');
+                errorLine.style.cssText = 'color:#c62828; font-size:12px; text-align:center;';
+
+                // The invoice as selectable text so it can be copied manually even
+                // if the clipboard API is unavailable.
+                const invoiceText = document.createElement('textarea');
+                invoiceText.readOnly = true;
+                invoiceText.value = paymentRequest;
+                invoiceText.setAttribute('aria-label', this.t('qrCodeAlt'));
+                invoiceText.style.cssText = 'width:200px; max-width:100%; height:64px; font-size:10px; word-break:break-all; user-select:all; resize:none; padding:6px; box-sizing:border-box;';
+
+                const copyButton = document.createElement('button');
+                copyButton.type = 'button';
+                copyButton.textContent = this.t('copyInvoice');
+                copyButton.style.cssText = 'cursor:pointer; padding:6px 12px; font-size:12px;';
+                copyButton.addEventListener('click', () => {
+                    invoiceText.select();
+                    copyPaymentRequest();
+                });
+
+                fallback.appendChild(errorLine);
+                fallback.appendChild(invoiceText);
+                fallback.appendChild(copyButton);
+                qrContainer.appendChild(fallback);
+            }
+
             qrContainer.classList.add('blink-pay-show');
             qrContainer.style.visibility = 'visible';
             qrContainer.style.opacity = '1';
