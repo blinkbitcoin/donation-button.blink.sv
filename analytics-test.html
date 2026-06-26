@@ -93,6 +93,15 @@
         </div>
 
         <div class="analytics-demo">
+            <h3>🪝 Lifecycle Callback Log</h3>
+            <p>The live widget below wires <code>onSuccess</code>, <code>onError</code>, and
+               <code>onTimeout</code>. Events appear here (and in the console) as you interact.
+               To smoke-test <code>onSuccess</code>, pay the generated invoice with a real
+               wallet; <code>onTimeout</code> fires if you let the invoice expire.</p>
+            <div id="callbackLog" class="url-display">No callback events yet…</div>
+        </div>
+
+        <div class="analytics-demo">
             <h3>ℹ️ What Gets Tracked</h3>
             <ul>
                 <li><strong>Username:</strong> The Blink username configured in the widget</li>
@@ -146,6 +155,19 @@
             }
         }
 
+        // Append a line to the on-page callback log (and the console).
+        function logCallback(name, payload) {
+            const el = document.getElementById('callbackLog');
+            const time = new Date().toLocaleTimeString();
+            const line = `[${time}] ${name}: ${JSON.stringify(payload)}`;
+            if (el.textContent === 'No callback events yet…') {
+                el.textContent = line;
+            } else {
+                el.textContent += '\n' + line;
+            }
+            console.log('[callback]', name, payload);
+        }
+
         // Initialize the live widget demo
         document.addEventListener('DOMContentLoaded', () => {
             BlinkPayButton.init({
@@ -157,6 +179,9 @@
                     { code: 'sats', name: 'sats', isCrypto: true },
                     { code: 'USD', name: 'USD', isCrypto: false }
                 ],
+                onSuccess: (payload) => logCallback('onSuccess', payload),
+                onError: (payload) => logCallback('onError', { message: payload && payload.message }),
+                onTimeout: (payload) => logCallback('onTimeout', payload),
                 debug: true
             });
         });

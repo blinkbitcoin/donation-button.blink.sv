@@ -1,7 +1,13 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.3.3 - Make payment-poll cancellation race-safe: a generation token
+ * Version: 1.4.0 - Optional embedder lifecycle callbacks (onSuccess/onError/
+ *                  onTimeout). Additive only; existing public API unchanged.
+ *                  Callbacks are invoked via a try/catch-wrapped fireCallback so a
+ *                  throwing embedder handler can never break the widget. onError
+ *                  also covers exchange-rate lookup failures (not just invoice/
+ *                  processing errors); input-validation errors stay UI-only.
+ *          1.3.3 - Make payment-poll cancellation race-safe: a generation token
  *                  ensures a poll loop cannot resume after stop/reset when its
  *                  request was already in flight (would otherwise poll unbounded).
  *          1.3.2 - Friendly "username not found" message: a non-existent Blink
@@ -614,6 +620,13 @@
             this.buttonWidth = config.buttonWidth || null; // Custom button width in pixels
             this.container = document.getElementById(this.containerId);
             this.debug = config.debug || false;
+
+            // Optional embedder lifecycle callbacks. Non-functions are ignored so a
+            // bad value can never throw. Invoked via fireCallback() (try/catch-wrapped)
+            // so a throwing embedder handler can't break the widget.
+            this.onSuccess = typeof config.onSuccess === 'function' ? config.onSuccess : null;
+            this.onError = typeof config.onError === 'function' ? config.onError : null;
+            this.onTimeout = typeof config.onTimeout === 'function' ? config.onTimeout : null;
             this.logs = [];
             this.selectedCurrency = 'sats'; // Default currency
             this.exchangeRates = {}; // Cache for exchange rates (currency -> rate)
@@ -666,7 +679,20 @@
             this.logs.push(logEntry);
             console.log(`[BlinkPay ${timestamp}]`, message, data || '');
         },
-        
+
+        // Safely invoke an optional embedder callback (onSuccess/onError/onTimeout).
+        // Any error thrown by the embedder's handler is caught and logged so it can
+        // never break the widget's own flow.
+        fireCallback: function(name, payload) {
+            const cb = this[name];
+            if (typeof cb !== 'function') return;
+            try {
+                cb(payload);
+            } catch (err) {
+                this.log(`Embedder ${name} callback threw`, err);
+            }
+        },
+
         // Render the widget in the container
         render: function() {
             // Blink logos for both light and dark modes with absolute URLs
@@ -1400,11 +1426,19 @@
                             await this.fetchExchangeRate(this.selectedCurrency);
                             exchangeRates = this.exchangeRates[this.selectedCurrency];
                         } catch (error) {
-                            return; // Error already shown in fetchExchangeRate
+                            // Error UI already shown in fetchExchangeRate. This is a
+                            // failed donation attempt (not input validation), so notify
+                            // the embedder before bailing out.
+                            this.fireCallback('onError', { error, message: error.message });
+                            return;
                         }
                     }
                 }
                 
+                // Stash the donation context for embedder callbacks. The selected
+                // currency/amount are not otherwise in scope at settlement time.
+                this.lastDonation = { amount, currency: this.selectedCurrency };
+
                 // Clear any previous status messages and start loading
                 this.showStatus('', '');
                 this.setButtonLoading(true);
@@ -1470,6 +1504,7 @@
                     console.error('Blink Pay Button Error:', error);
                     this.showStatus('error', error.message || this.t('anErrorOccurred'));
                     this.setButtonLoading(false);
+                    this.fireCallback('onError', { error, message: error.message });
                 }
             } catch (topLevelError) {
                 console.error('Top-level error in handleDonate:', topLevelError);
@@ -1477,6 +1512,7 @@
                 console.error('Widget context:', this);
                 this.showStatus('error', `Debug error: ${topLevelError.message}`);
                 this.setButtonLoading(false);
+                this.fireCallback('onError', { error: topLevelError, message: topLevelError.message });
             }
         },
         
@@ -1844,6 +1880,13 @@
         
         // Display the invoice and QR code
         displayInvoice: function(paymentRequest, expiryMinutes) {
+            // Stash for embedder callbacks (onSuccess/onTimeout payloads).
+            this.currentPaymentRequest = paymentRequest;
+            // Reset the per-invoice guards so onTimeout/onSuccess can each fire once
+            // for this invoice (and again for a subsequent donation in the session).
+            this.timeoutFired = false;
+            this.successFired = false;
+
             const qrContainer = document.getElementById('blink-pay-qr');
             const successContainer = document.getElementById('blink-pay-success');
             const amountInput = document.getElementById('blink-pay-amount');
@@ -1898,6 +1941,11 @@
                     countdownElement.style.color = '#c62828 !important';
                     countdownElement.textContent = '0:00';
                     this.log('Invoice expired');
+                    // Notify the embedder once that the invoice timed out unpaid.
+                    if (!this.timeoutFired) {
+                        this.timeoutFired = true;
+                        this.fireCallback('onTimeout', { paymentRequest: this.currentPaymentRequest });
+                    }
                 } else {
                     totalSeconds--;
                 }
@@ -2389,6 +2437,20 @@
                 // Clear the status
                 this.showStatus('', '');
             });
+
+            // Notify the embedder of the successful donation. Guarded so the three
+            // settlement detectors (WebSocket / LUD-21 verify / GraphQL poll) can't
+            // double-fire if more than one observes the same payment.
+            if (!this.successFired) {
+                this.successFired = true;
+                const donation = this.lastDonation || {};
+                this.fireCallback('onSuccess', {
+                    username: this.username,
+                    amount: donation.amount,
+                    currency: donation.currency,
+                    paymentRequest: this.currentPaymentRequest
+                });
+            }
         },
         
         // Set the loading state of the button
@@ -2695,7 +2757,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.3.3');
+            params.append('widget_version', '1.4.0');
             
             return `${baseUrl}?${params.toString()}`;
         }
