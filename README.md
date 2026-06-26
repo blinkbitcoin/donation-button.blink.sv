@@ -73,7 +73,36 @@ Your widget is now live and ready to receive Bitcoin Lightning donations!
 | `defaultAmount` | number | `1000` | Default amount in sats |
 | `buttonWidth` | number | `null` | Custom button width in pixels (200-500px) |
 | `supportedCurrencies` | array | `[sats, USD]` | Array of currency objects |
+| `onSuccess` | function | `null` | Called when a donation is paid. Receives `{ username, amount, currency, paymentRequest }` |
+| `onError` | function | `null` | Called when a donation attempt fails. Receives `{ error, message }` |
+| `onTimeout` | function | `null` | Called when the displayed invoice expires unpaid. Receives `{ paymentRequest }` |
 | `debug` | boolean | `false` | Enable console logging |
+
+### Lifecycle Callbacks
+
+The optional `onSuccess`, `onError`, and `onTimeout` callbacks let the embedding site
+react to donation events (e.g. analytics, thank-you UI, or error monitoring). They are
+additive and entirely optional — omitting them changes nothing. A handler that throws is
+caught internally and never breaks the widget.
+
+```javascript
+BlinkPayButton.init({
+  username: 'your-blink-username',
+  containerId: 'blink-pay-button-container',
+  onSuccess: ({ username, amount, currency, paymentRequest }) => {
+    console.log(`Received ${amount} ${currency} for ${username}`);
+  },
+  onError: ({ message }) => {
+    console.warn('Donation failed:', message);
+  },
+  onTimeout: ({ paymentRequest }) => {
+    console.log('Invoice expired unpaid:', paymentRequest);
+  }
+});
+```
+
+> Note: `amount`/`currency` in the `onSuccess` payload reflect the donor's selected display
+> amount and currency at request time.
 
 ### Currency Configuration
 
