@@ -61,8 +61,9 @@ calls `BlinkPayButton.init({...})`. Embeds are **not version-pinned**, so **merg
    LUD-21 `verify` URL.
 
 Endpoints called directly from the browser: `api.blink.sv/graphql`,
-`wss://ws.blink.sv/graphql`, `blink.sv/.well-known/lnurlp/...`, and `api.qrserver.com`
-(QR rendering). Only **blink.sv** Lightning addresses are supported.
+`wss://ws.blink.sv/graphql`, and `blink.sv/.well-known/lnurlp/...`. QR codes are
+generated **client-side** (inlined, MIT-licensed `qrcode-generator`); there is no
+third-party QR request. Only **blink.sv** Lightning addresses are supported.
 
 ## Commands
 

@@ -1,6 +1,6 @@
 {
   "name": "blink-donation-button",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Blink Pay Button donation widget — tests for custodial + self-custodial (Spark) receive.",
   "private": true,
   "type": "module",
