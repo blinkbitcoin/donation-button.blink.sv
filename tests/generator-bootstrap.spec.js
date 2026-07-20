@@ -60,7 +60,6 @@ function runGenerator() {
     // Execute the browser path exactly as a <script> tag would. `module` is
     // undefined inside new Function(), so the UMD export branch is skipped —
     // we only care about the DOM side effects here.
-    // eslint-disable-next-line no-new-func
     new Function(generatorSrc)();
 }
 
@@ -68,7 +67,7 @@ beforeEach(() => {
     document.body.innerHTML = GENERATOR_DOM;
     try {
         window.sessionStorage.clear();
-    } catch (e) {
+    } catch {
         /* ignore */
     }
 

@@ -45,7 +45,7 @@ function parseUsernameFromPath(pathname) {
     let segment;
     try {
         segment = decodeURIComponent(trimmed);
-    } catch (e) {
+    } catch {
         return null;
     }
 
@@ -110,7 +110,7 @@ function resolveDeepLinkUsername(win) {
                 return fromStore;
             }
         }
-    } catch (e) {
+    } catch {
         // sessionStorage can throw (private mode / disabled) — fall through.
     }
 

@@ -42,7 +42,6 @@ function loadInline404Parser() {
             'function definition or its indentation change?'
         );
     }
-    // eslint-disable-next-line no-new-func
     const factory = new Function(match[0] + '\nreturn parseUsernameFromPath;');
     return factory();
 }
