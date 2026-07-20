@@ -1,8 +1,8 @@
-# Blink Pay Button - Analytics Tracking
+# Blink Donation Button - Analytics Tracking
 
 ## Overview
 
-The Blink Pay Button widget now includes built-in analytics tracking to help the Blink team understand how and where their widget is being used, and to track referrals from embedded donation buttons.
+The Blink Donation Button widget now includes built-in analytics tracking to help the Blink team understand how and where their widget is being used, and to track referrals from embedded donation buttons.
 
 ## How It Works
 

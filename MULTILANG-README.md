@@ -1,6 +1,6 @@
-# Multi-Language Support for Blink Pay Button
+# Multi-Language Support for Blink Donation Button
 
-The Blink Pay Button widget now supports **35+ languages**, making Bitcoin Lightning donations accessible to users worldwide, with particular focus on Global South countries.
+The Blink Donation Button widget now supports **35+ languages**, making Bitcoin Lightning donations accessible to users worldwide, with particular focus on Global South countries.
 
 ## Supported Languages
 
@@ -64,7 +64,7 @@ This language expansion specifically targets Global South regions where Bitcoin 
 
 ### Using the Generator
 
-When using the [Blink Pay Button Generator](https://blinkbitcoin.github.io/donation-button.blink.sv/), you can now:
+When using the [Blink Donation Button Generator](https://blinkbitcoin.github.io/donation-button.blink.sv/), you can now:
 
 1. Select your preferred language from the "Widget Language" dropdown
 2. The generator will include the language parameter in the generated code

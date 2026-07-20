@@ -1,4 +1,4 @@
-# Blink Pay Button Widget
+# Blink Donation Button Widget
 
 A lightweight, embeddable Bitcoin Lightning donation widget that integrates with [Blink](https://blink.sv/) for instant, low-fee Bitcoin payments. Built with vanilla JavaScript and designed for easy integration into any website.
 
@@ -37,10 +37,10 @@ Visit [blinkbitcoin.github.io/donation-button.blink.sv](https://blinkbitcoin.git
 Paste the generated code into your HTML:
 
 ```html
-<!-- Blink Pay Button widget -->
+<!-- Blink Donation Button widget -->
 <div id="blink-pay-button-container"></div>
 
-<!-- Blink Pay Button script -->
+<!-- Blink Donation Button script -->
 <script src="https://blinkbitcoin.github.io/donation-button.blink.sv/js/blink-pay-button.js"></script>
 <script>
   BlinkPayButton.init({

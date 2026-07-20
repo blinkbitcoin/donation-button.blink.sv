@@ -1,5 +1,5 @@
 /**
- * Blink Pay Button Generator
+ * Blink Donation Button Generator
  * Generates embeddable code for a Bitcoin Lightning donation button
  */
 document.addEventListener('DOMContentLoaded', function() {
@@ -414,10 +414,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const buttonWidthConfig = currentButtonWidth ? `\n        buttonWidth: ${currentButtonWidth},` : '';
         
         // Generate the HTML code for embedding with the domain
-        const generatedCode = `<!-- Blink Pay Button widget -->
+        const generatedCode = `<!-- Blink Donation Button widget -->
 <div id="blink-pay-button-container"></div>
 
-<!-- Blink Pay Button script -->
+<!-- Blink Donation Button script -->
         <script src="https://blinkbitcoin.github.io/donation-button.blink.sv/js/blink-pay-button.js"></script>
 <script>
   // Initialize widget when script is loaded
