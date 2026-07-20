@@ -740,8 +740,27 @@ function initGenerator() {
 // Wire up on DOM ready in the browser. Guarded so the file can also be required
 // in a non-DOM test context (to exercise the pure helpers below) without side
 // effects.
-if (typeof document !== 'undefined' && document.addEventListener) {
-    document.addEventListener('DOMContentLoaded', initGenerator);
+//
+// IMPORTANT: this script is loaded at the end of <body> without `defer`, and it
+// can also be reached via the 404.html -> location.replace('/') deep-link
+// redirect. In that redirect/bfcache path the DOM is often already fully parsed
+// by the time this runs, meaning `DOMContentLoaded` has ALREADY fired — so a
+// bare addEventListener('DOMContentLoaded', ...) would never run and the
+// deep-link username would be silently swallowed. Guard on document.readyState
+// and run initGenerator immediately when the DOM is already available.
+//
+// The `typeof module` check keeps this a no-op when the file is required by the
+// test runner to exercise the pure helpers below (there is no real DOM there,
+// and running the full init would throw). In the browser `module` is undefined,
+// so the bootstrap runs normally.
+if (typeof module === 'undefined' &&
+    typeof document !== 'undefined' && document.addEventListener) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initGenerator);
+    } else {
+        // DOM already parsed (DOMContentLoaded has fired) — run now.
+        initGenerator();
+    }
 }
 
 // UMD-style export of the pure deep-link helpers for unit tests. The browser
