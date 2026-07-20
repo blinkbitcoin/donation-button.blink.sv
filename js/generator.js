@@ -57,6 +57,11 @@ function parseUsernameFromPath(pathname) {
     }
 
     // Reserved paths that exist (or may exist) as real files/dirs in the site.
+    // NOTE: keep this list (and the parser rules above/below) in sync with the
+    // inline ES5 copy in 404.html. The duplication is intentional — 404.html
+    // must be dependency-free and run before render on GitHub Pages, so it can't
+    // import this module. tests/generator-deeplink-parity.spec.js asserts the
+    // two implementations agree and fails CI if they drift.
     const RESERVED = new Set([
         'index', 'img', 'js', 'css', 'tests', 'assets',
         'favicon', 'robots', 'sitemap', '404', 'cname',

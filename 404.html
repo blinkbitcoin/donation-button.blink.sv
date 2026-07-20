@@ -43,6 +43,12 @@
                 // Looks like a file (has an extension) -> not a username.
                 if (/\.[a-z0-9]+$/i.test(segment)) return null;
 
+                // NOTE: keep this reserved list (and the parser rules above)
+                // in sync with parseUsernameFromPath() in js/generator.js. The
+                // two implementations are intentionally duplicated — this page
+                // must be dependency-free and run before render on GitHub Pages,
+                // so it can't import the module version. A parity test
+                // (tests/generator-deeplink-parity.spec.js) fails CI if they drift.
                 var reserved = {
                     index: 1, img: 1, js: 1, css: 1, tests: 1, assets: 1,
                     favicon: 1, robots: 1, sitemap: 1, '404': 1, cname: 1
@@ -59,9 +65,11 @@
                 try {
                     sessionStorage.setItem('blinkRedirectUsername', username);
                 } catch (e) {
-                    // sessionStorage unavailable (private mode / disabled): fall
-                    // back to a query param the generator can also read is not
-                    // implemented; just proceed to home.
+                    // sessionStorage unavailable (e.g. private mode / disabled).
+                    // By design we do NOT fall back to a query param — we simply
+                    // send the visitor to the generator home, where they can type
+                    // their username. This is a deliberate choice (keeps the URL
+                    // surface small); it is not a pending feature.
                 }
             }
 
