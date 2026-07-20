@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blink Donation Button Generator</title>
+    <meta name="robots" content="noindex">
+    <!--
+        GitHub Pages has no server-side routing: it serves static files by exact
+        path and falls back to this 404.html for anything it can't match. We use
+        that to support username-customized deep links, e.g.
+
+            https://donation-button.blink.sv/pretyflaco
+
+        (linked from the Blink mobile app's "Ways to get paid" section).
+
+        This page captures the requested path, stashes the candidate username in
+        sessionStorage, and redirects to "/", where js/generator.js reads it and
+        auto-generates that user's donation button. If the path isn't a plausible
+        single-segment username, we just send the visitor to the generator home.
+
+        Kept dependency-free and inline so it runs before any render.
+    -->
+    <script>
+        (function () {
+            // Mirror of parseUsernameFromPath() in js/generator.js — keep the two
+            // in sync. A valid deep link is a single path segment that is not a
+            // file and not a reserved site path.
+            function parseUsernameFromPath(pathname) {
+                if (typeof pathname !== 'string') return null;
+
+                var trimmed = pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+                if (trimmed === '') return null;
+                if (trimmed.indexOf('/') !== -1) return null;
+
+                var segment;
+                try {
+                    segment = decodeURIComponent(trimmed);
+                } catch (e) {
+                    return null;
+                }
+
+                // Looks like a file (has an extension) -> not a username.
+                if (/\.[a-z0-9]+$/i.test(segment)) return null;
+
+                var reserved = {
+                    index: 1, img: 1, js: 1, css: 1, tests: 1, assets: 1,
+                    favicon: 1, robots: 1, sitemap: 1, '404': 1, cname: 1
+                };
+                if (reserved[segment.toLowerCase()]) return null;
+
+                if (!/^[a-z0-9_]{1,50}$/i.test(segment)) return null;
+
+                return segment;
+            }
+
+            var username = parseUsernameFromPath(window.location.pathname);
+            if (username) {
+                try {
+                    sessionStorage.setItem('blinkRedirectUsername', username);
+                } catch (e) {
+                    // sessionStorage unavailable (private mode / disabled): fall
+                    // back to a query param the generator can also read is not
+                    // implemented; just proceed to home.
+                }
+            }
+
+            // Redirect to the generator root. Use replace() so the 404 URL does
+            // not linger in history.
+            window.location.replace('/');
+        })();
+    </script>
+</head>
+<body>
+    <noscript>
+        <p>
+            Page not found. Visit the
+            <a href="/">Blink Donation Button Generator</a>.
+        </p>
+    </noscript>
+</body>
+</html>

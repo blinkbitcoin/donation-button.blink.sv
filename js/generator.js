@@ -2,7 +2,122 @@
  * Blink Pay Button Generator
  * Generates embeddable code for a Bitcoin Lightning donation button
  */
-document.addEventListener('DOMContentLoaded', function() {
+
+/**
+ * Deep-link username parsing (pure, unit-testable).
+ *
+ * The generator supports a username-customized URL so external surfaces (e.g.
+ * the Blink mobile app "Ways to get paid" section) can link straight to a
+ * pre-generated donation button, e.g.:
+ *
+ *     https://donation-button.blink.sv/pretyflaco
+ *
+ * GitHub Pages serves static files by exact path and has no server-side
+ * routing, so `404.html` captures the path and hands it to this page (via
+ * sessionStorage) after redirecting to `/`. This helper turns a raw URL path
+ * into a candidate Blink username, or `null` when the path is not a plausible
+ * single-segment username (root, nested paths, files, reserved words, junk).
+ *
+ * It is intentionally a pure function of its input string so it can be unit
+ * tested without a DOM, and is exported UMD-style at the bottom of this file.
+ *
+ * @param {string} pathname - e.g. location.pathname ("/pretyflaco")
+ * @returns {string|null} the candidate username, or null if none
+ */
+function parseUsernameFromPath(pathname) {
+    if (typeof pathname !== 'string') {
+        return null;
+    }
+
+    // Strip surrounding slashes and take the first path segment only. A valid
+    // deep link is a single segment: "/pretyflaco" -> "pretyflaco". Nested
+    // paths ("/foo/bar") are not usernames.
+    const trimmed = pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+    if (trimmed === '') {
+        return null; // root path "/" -> generator with no prefill
+    }
+    if (trimmed.includes('/')) {
+        return null; // nested path -> not a username
+    }
+
+    // Decode percent-encoding (e.g. if a client encoded the segment) before
+    // validating. Bail on malformed encodings.
+    let segment;
+    try {
+        segment = decodeURIComponent(trimmed);
+    } catch (e) {
+        return null;
+    }
+
+    // Ignore anything that looks like a file (has an extension such as
+    // index.html, favicon.ico, robots.txt, sitemap.xml, *.js/.css/.map, etc.)
+    // so real asset requests are never treated as usernames.
+    if (/\.[a-z0-9]+$/i.test(segment)) {
+        return null;
+    }
+
+    // Reserved paths that exist (or may exist) as real files/dirs in the site.
+    const RESERVED = new Set([
+        'index', 'img', 'js', 'css', 'tests', 'assets',
+        'favicon', 'robots', 'sitemap', '404', 'cname',
+    ]);
+    if (RESERVED.has(segment.toLowerCase())) {
+        return null;
+    }
+
+    // Blink usernames are lowercased alphanumerics (with optional underscores),
+    // typically 3-50 chars. Keep this permissive but bounded — the generator
+    // still verifies existence against Blink before rendering anything, so this
+    // is only a cheap sanity gate, not the source of truth.
+    if (!/^[a-z0-9_]{1,50}$/i.test(segment)) {
+        return null;
+    }
+
+    return segment;
+}
+
+/**
+ * Resolve a deep-link username for the current page load (browser-only).
+ *
+ * Order of precedence:
+ *   1. `sessionStorage.blinkRedirectUsername` — set by 404.html when a
+ *      username path (e.g. /pretyflaco) was requested and bounced to `/`.
+ *      Consumed once, then cleared.
+ *   2. `location.pathname` — covers the (rare) case where the host serves the
+ *      app for the path directly without a 404 bounce.
+ *
+ * @param {Window} [win=window] - injectable for tests
+ * @returns {string|null}
+ */
+function resolveDeepLinkUsername(win) {
+    const w = win || (typeof window !== 'undefined' ? window : undefined);
+    if (!w) {
+        return null;
+    }
+
+    // 1. From the 404.html redirect handoff.
+    try {
+        const stored = w.sessionStorage && w.sessionStorage.getItem('blinkRedirectUsername');
+        if (stored) {
+            w.sessionStorage.removeItem('blinkRedirectUsername');
+            const fromStore = parseUsernameFromPath('/' + stored);
+            if (fromStore) {
+                return fromStore;
+            }
+        }
+    } catch (e) {
+        // sessionStorage can throw (private mode / disabled) — fall through.
+    }
+
+    // 2. Directly from the current path.
+    if (w.location && typeof w.location.pathname === 'string') {
+        return parseUsernameFromPath(w.location.pathname);
+    }
+
+    return null;
+}
+
+function initGenerator() {
     const blinkUsernameInput = document.getElementById('blinkUsername');
     const generateBtn = document.getElementById('generateBtn');
     const resultContainer = document.getElementById('result-container');
@@ -603,4 +718,31 @@ document.addEventListener('DOMContentLoaded', function() {
         updateWidgetPreview();
         updateGeneratedCode();
     });
-}); 
+
+    // Deep-link bootstrap: if the page was reached via a username-customized URL
+    // (e.g. https://donation-button.blink.sv/pretyflaco, linked from the Blink
+    // app's "Ways to get paid" section), prefill the username and auto-generate
+    // so the visitor lands straight on their donation button. Existence is still
+    // verified inside generateCode() (with the Spark LNURL fallback), so an
+    // unknown username shows the normal "does not exist yet" message.
+    const deepLinkUsername = resolveDeepLinkUsername(window);
+    if (deepLinkUsername) {
+        blinkUsernameInput.value = deepLinkUsername;
+        generateCode();
+    }
+}
+
+// Wire up on DOM ready in the browser. Guarded so the file can also be required
+// in a non-DOM test context (to exercise the pure helpers below) without side
+// effects.
+if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('DOMContentLoaded', initGenerator);
+}
+
+// UMD-style export of the pure deep-link helpers for unit tests. The browser
+// <script> path ignores this (module is undefined); the test runner requires
+// generator.js only to exercise parseUsernameFromPath / resolveDeepLinkUsername
+// without a DOM.
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { parseUsernameFromPath, resolveDeepLinkUsername };
+}
