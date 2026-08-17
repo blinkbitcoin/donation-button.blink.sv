@@ -256,6 +256,19 @@
   }
 
   /**
+   * Whether a LUD-21 verify `reason` denotes a STABLE terminal condition (the
+   * invoice does not exist / will never settle) versus a transient/ambiguous
+   * failure that should be retried. Conservative and fail-safe: only an explicit
+   * "not found" is terminal; anything else (incl. "Internal server error",
+   * "…try again later") returns false so the caller keeps retrying.
+   * @param {string} reason
+   * @returns {boolean}
+   */
+  function isTerminalVerifyReason(reason) {
+    return /not\s*found/i.test(reason || '');
+  }
+
+  /**
    * Poll a LUD-21 verify URL to check whether an invoice has been paid.
    *
    * Self-custodial (Spark) note: the verify endpoint is populated by the Spark
@@ -277,12 +290,19 @@
     }
     const data = await response.json();
     if (data.status === 'ERROR') {
-      // A genuine verify ERROR (e.g. invoice not found/rejected) is TERMINAL: the
-      // invoice will never settle, so a poller should stop rather than keep
-      // re-polling until expiry. Tag it so callers can distinguish this from a
-      // transient network/HTTP failure (which should back off and retry).
-      const err = new Error('LNURL verify error: ' + (data.reason || 'Unknown error'));
-      err.lnurlVerifyTerminal = true;
+      const reason = data.reason || 'Unknown error';
+      const err = new Error('LNURL verify error: ' + reason);
+      // Blink's verify route returns status:ERROR for BOTH a terminal "Not found"
+      // (the invoice never existed / will never settle) AND transient backend
+      // failures ("Internal server error", or a GraphQL throw => "…try again
+      // later"). Only classify the clearly-terminal not-found case as terminal so
+      // the poller can stop early; every other ERROR stays transient and is retried
+      // until settle or invoice expiry. There is no machine-readable terminal field,
+      // so we match the reason string — this FAILS SAFE: an unrecognised reason is
+      // treated as transient (retry), never as a missed payment.
+      if (isTerminalVerifyReason(reason)) {
+        err.lnurlVerifyTerminal = true;
+      }
       throw err;
     }
     return {
@@ -301,5 +321,6 @@
     requestInvoiceFromCallback: requestInvoiceFromCallback,
     getInvoiceFromLightningAddress: getInvoiceFromLightningAddress,
     verifyLnurlPayment: verifyLnurlPayment,
+    isTerminalVerifyReason: isTerminalVerifyReason,
   };
 });

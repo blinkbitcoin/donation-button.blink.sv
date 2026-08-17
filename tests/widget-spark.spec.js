@@ -133,11 +133,12 @@ describe('widget inline Spark helpers (getLnurl)', () => {
   });
 
   // Parity with the canonical module's ERROR handling: the inline copy must throw
-  // on status:ERROR and tag it terminal, and throw (non-terminal) on non-ok HTTP.
-  it('inline verifyLnurlPayment marks status:ERROR terminal (matches canonical)', async () => {
+  // on status:ERROR, tag ONLY a "not found" reason terminal, and leave transient
+  // ERRORs / non-ok HTTP untagged (so the poller keeps retrying).
+  it('inline verifyLnurlPayment marks "not found" status:ERROR terminal (matches canonical)', async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(jsonResponse({ status: 'ERROR', reason: 'not found' }));
+      .mockResolvedValue(jsonResponse({ status: 'ERROR', reason: 'Not found' }));
     window.fetch = fetchMock;
     global.fetch = fetchMock;
 
@@ -153,6 +154,30 @@ describe('widget inline Spark helpers (getLnurl)', () => {
     expect(inlineErr).toBeInstanceOf(Error);
     expect(inlineErr.lnurlVerifyTerminal).toBe(true);
     // Inline and canonical agree on the terminal flag.
+    expect(inlineErr.lnurlVerifyTerminal).toBe(canonicalErr.lnurlVerifyTerminal);
+  });
+
+  it('inline verifyLnurlPayment does NOT mark a transient "try again later" ERROR terminal (matches canonical)', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      jsonResponse({
+        status: 'ERROR',
+        reason: 'We could not verify the invoice. Please try again later.',
+      })
+    );
+    window.fetch = fetchMock;
+    global.fetch = fetchMock;
+
+    const inline = widget.getLnurl();
+    const inlineErr = await inline
+      .verifyLnurlPayment('https://blink.sv/verify/h')
+      .catch((e) => e);
+    const canonicalErr = await Canonical.verifyLnurlPayment(
+      'https://blink.sv/verify/h',
+      fetchMock
+    ).catch((e) => e);
+
+    expect(inlineErr).toBeInstanceOf(Error);
+    expect(inlineErr.lnurlVerifyTerminal).toBeUndefined();
     expect(inlineErr.lnurlVerifyTerminal).toBe(canonicalErr.lnurlVerifyTerminal);
   });
 

@@ -158,6 +158,46 @@ describe('pollVerifyStatus (bounded)', () => {
 
         widget.stopPaymentPolling(); // don't leave it polling
     });
+
+    // Blink's verify route returns status:ERROR for a transient backend failure
+    // ("…try again later"). verifyLnurlPayment throws WITHOUT the terminal tag for
+    // such reasons, so pollVerifyStatus must keep retrying (not stop), or a later
+    // payment would go unobserved. Drives the real inline verifyLnurlPayment via a
+    // stubbed fetch so the reason-based classification is exercised end-to-end.
+    it('keeps retrying when verify returns a transient "try again later" status:ERROR', async () => {
+        const inline = widget.getLnurl(); // real inline verifyLnurlPayment
+        widget.getLnurl = () => inline;
+
+        let calls = 0;
+        const fetchMock = vi.fn().mockImplementation(async () => {
+            calls++;
+            // Always the transient ERROR envelope (HTTP 200, status:ERROR).
+            return {
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({
+                    status: 'ERROR',
+                    reason: 'We could not verify the invoice. Please try again later.',
+                }),
+            };
+        });
+        window.fetch = fetchMock;
+        global.fetch = fetchMock;
+        widget.invoiceExpiresAt = Date.now() + 60000;
+
+        widget.pollVerifyStatus('https://blink.sv/verify/h');
+        await vi.advanceTimersByTimeAsync(0); // initial check: transient ERROR thrown
+        expect(calls).toBe(1);
+        expect(widget.paymentPollTimeout).not.toBeNull(); // scheduled a retry (did NOT stop)
+
+        await vi.advanceTimersByTimeAsync(5000); // 5s error backoff => retry
+        expect(calls).toBeGreaterThan(1);
+
+        widget.stopPaymentPolling();
+        delete window.fetch;
+        delete global.fetch;
+    });
 });
 
 describe('stopPaymentPolling', () => {
