@@ -1,7 +1,14 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.5.0 - Generate the invoice QR code client-side via an inlined,
+ * Version: 1.5.1 - Stop LUD-21 verify polling immediately on a terminal
+ *                  verify error (status:ERROR: invoice not found/rejected)
+ *                  instead of backing off and re-polling until invoice expiry.
+ *                  Transient network/HTTP errors still back off and retry.
+ *                  verifyLnurlPayment now tags terminal errors
+ *                  (err.lnurlVerifyTerminal); canonical + inline copies kept in
+ *                  parity. No public API / DOM changes.
+ *          1.5.0 - Generate the invoice QR code client-side via an inlined,
  *                  MIT-licensed qrcode-generator instead of api.qrserver.com.
  *                  Removes the third-party request (privacy + availability) and
  *                  the only external CORS dependency. Drops the unused
@@ -1628,7 +1635,13 @@
                     const resp = await fetch(verifyUrl, { headers: { Accept: 'application/json' } });
                     if (!resp.ok) throw new Error('LNURL verify returned ' + resp.status);
                     const data = await resp.json();
-                    if (data.status === 'ERROR') throw new Error('LNURL verify error: ' + (data.reason || 'Unknown error'));
+                    if (data.status === 'ERROR') {
+                        // Terminal: invoice will never settle (see js/blink-lnurl.js).
+                        // Tagged so pollVerifyStatus stops instead of backing off to expiry.
+                        const err = new Error('LNURL verify error: ' + (data.reason || 'Unknown error'));
+                        err.lnurlVerifyTerminal = true;
+                        throw err;
+                    }
                     return { settled: data.settled === true, preimage: data.preimage == null ? undefined : data.preimage, pr: data.pr };
                 },
             };
@@ -1733,6 +1746,13 @@
                 } catch (error) {
                     this.log(`Error polling verify status: ${error.message}`, error);
                     if (this.pollGeneration !== myGen) return; // superseded
+                    // A terminal verify error (status:ERROR: invoice not found/rejected)
+                    // means the invoice will never settle — stop instead of re-polling
+                    // until expiry. Transient network/HTTP errors still back off + retry.
+                    if (error && error.lnurlVerifyTerminal) {
+                        this.log('LUD-21 verify returned a terminal error; stopping polling');
+                        return;
+                    }
                     this.paymentPollTimeout = setTimeout(check, 5000); // back off on error
                 }
             };
@@ -2739,7 +2759,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.5.0');
+            params.append('widget_version', '1.5.1');
             
             return `${baseUrl}?${params.toString()}`;
         }

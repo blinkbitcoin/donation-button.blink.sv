@@ -115,6 +115,49 @@ describe('pollVerifyStatus (bounded)', () => {
         await vi.advanceTimersByTimeAsync(10000);
         expect(verify.mock.calls.length).toBe(callsWhenSettled); // stopped
     });
+
+    it('stops immediately on a terminal verify error (status:ERROR), not backing off to expiry', async () => {
+        // A genuine {"status":"ERROR"} means the invoice will never settle; keep
+        // re-polling it until expiry is pointless. verifyLnurlPayment tags such
+        // errors terminal; pollVerifyStatus must stop rather than reschedule.
+        const err = new Error('LNURL verify error: not found');
+        err.lnurlVerifyTerminal = true;
+        const verify = vi.fn().mockRejectedValue(err);
+        widget.getLnurl = () => ({ verifyLnurlPayment: verify });
+        widget.invoiceExpiresAt = Date.now() + 60000; // far from expiry
+
+        widget.pollVerifyStatus('https://blink.sv/verify/h');
+        await vi.advanceTimersByTimeAsync(0); // let the initial check run
+
+        expect(verify).toHaveBeenCalledTimes(1);
+        expect(widget.paymentPollTimeout).toBeNull(); // did not reschedule
+
+        // Advancing past both the 2s success cadence and the 5s error backoff
+        // proves it truly stopped.
+        await vi.advanceTimersByTimeAsync(10000);
+        expect(verify).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps backing off and retrying on a transient (non-terminal) error', async () => {
+        // A transient network/HTTP blip must NOT stop polling: back off 5s and retry.
+        const transient = new Error('LNURL verify returned 502');
+        const verify = vi
+            .fn()
+            .mockRejectedValueOnce(transient) // first poll fails transiently
+            .mockResolvedValue({ settled: false }); // subsequent polls unpaid
+        widget.getLnurl = () => ({ verifyLnurlPayment: verify });
+        widget.invoiceExpiresAt = Date.now() + 60000;
+
+        widget.pollVerifyStatus('https://blink.sv/verify/h');
+        await vi.advanceTimersByTimeAsync(0); // initial check throws transiently
+        expect(verify).toHaveBeenCalledTimes(1);
+        expect(widget.paymentPollTimeout).not.toBeNull(); // scheduled a retry
+
+        await vi.advanceTimersByTimeAsync(5000); // 5s error backoff elapses => retry
+        expect(verify.mock.calls.length).toBeGreaterThan(1);
+
+        widget.stopPaymentPolling(); // don't leave it polling
+    });
 });
 
 describe('stopPaymentPolling', () => {

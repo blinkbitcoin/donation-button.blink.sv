@@ -234,6 +234,18 @@ describe('blink-lnurl helpers', () => {
       ).rejects.toThrow(/not found/);
     });
 
+    it('marks a status:ERROR as terminal (invoice will never settle)', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        jsonResponse({ status: 'ERROR', reason: 'not found' })
+      );
+      const err = await BlinkLnurl.verifyLnurlPayment(
+        'https://blink.sv/verify/h',
+        fetchMock
+      ).catch((e) => e);
+      expect(err).toBeInstanceOf(Error);
+      expect(err.lnurlVerifyTerminal).toBe(true);
+    });
+
     it('throws on a non-ok HTTP response', async () => {
       const fetchMock = vi.fn().mockResolvedValue(
         jsonResponse({}, { ok: false, status: 502, statusText: 'Bad Gateway' })
@@ -241,6 +253,18 @@ describe('blink-lnurl helpers', () => {
       await expect(
         BlinkLnurl.verifyLnurlPayment('https://blink.sv/verify/h', fetchMock)
       ).rejects.toThrow(/502/);
+    });
+
+    it('does NOT mark a transient non-ok HTTP error as terminal', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        jsonResponse({}, { ok: false, status: 502, statusText: 'Bad Gateway' })
+      );
+      const err = await BlinkLnurl.verifyLnurlPayment(
+        'https://blink.sv/verify/h',
+        fetchMock
+      ).catch((e) => e);
+      expect(err).toBeInstanceOf(Error);
+      expect(err.lnurlVerifyTerminal).toBeUndefined();
     });
   });
 });

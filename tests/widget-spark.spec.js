@@ -131,6 +131,51 @@ describe('widget inline Spark helpers (getLnurl)', () => {
     expect(paid.settled).toBe(true);
     expect(paid.preimage).toBe('p');
   });
+
+  // Parity with the canonical module's ERROR handling: the inline copy must throw
+  // on status:ERROR and tag it terminal, and throw (non-terminal) on non-ok HTTP.
+  it('inline verifyLnurlPayment marks status:ERROR terminal (matches canonical)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({ status: 'ERROR', reason: 'not found' }));
+    window.fetch = fetchMock;
+    global.fetch = fetchMock;
+
+    const inline = widget.getLnurl();
+    const inlineErr = await inline
+      .verifyLnurlPayment('https://blink.sv/verify/h')
+      .catch((e) => e);
+    const canonicalErr = await Canonical.verifyLnurlPayment(
+      'https://blink.sv/verify/h',
+      fetchMock
+    ).catch((e) => e);
+
+    expect(inlineErr).toBeInstanceOf(Error);
+    expect(inlineErr.lnurlVerifyTerminal).toBe(true);
+    // Inline and canonical agree on the terminal flag.
+    expect(inlineErr.lnurlVerifyTerminal).toBe(canonicalErr.lnurlVerifyTerminal);
+  });
+
+  it('inline verifyLnurlPayment does NOT mark non-ok HTTP terminal (matches canonical)', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(jsonResponse({}, { ok: false, status: 502, statusText: 'Bad Gateway' }));
+    window.fetch = fetchMock;
+    global.fetch = fetchMock;
+
+    const inline = widget.getLnurl();
+    const inlineErr = await inline
+      .verifyLnurlPayment('https://blink.sv/verify/h')
+      .catch((e) => e);
+    const canonicalErr = await Canonical.verifyLnurlPayment(
+      'https://blink.sv/verify/h',
+      fetchMock
+    ).catch((e) => e);
+
+    expect(inlineErr).toBeInstanceOf(Error);
+    expect(inlineErr.lnurlVerifyTerminal).toBeUndefined();
+    expect(inlineErr.lnurlVerifyTerminal).toBe(canonicalErr.lnurlVerifyTerminal);
+  });
 });
 
 describe('widget getAccountDefaultWallet (custodial probe)', () => {

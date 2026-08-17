@@ -277,7 +277,13 @@
     }
     const data = await response.json();
     if (data.status === 'ERROR') {
-      throw new Error('LNURL verify error: ' + (data.reason || 'Unknown error'));
+      // A genuine verify ERROR (e.g. invoice not found/rejected) is TERMINAL: the
+      // invoice will never settle, so a poller should stop rather than keep
+      // re-polling until expiry. Tag it so callers can distinguish this from a
+      // transient network/HTTP failure (which should back off and retry).
+      const err = new Error('LNURL verify error: ' + (data.reason || 'Unknown error'));
+      err.lnurlVerifyTerminal = true;
+      throw err;
     }
     return {
       settled: data.settled === true,
