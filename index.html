@@ -30,7 +30,7 @@
     <meta property="twitter:creator" content="@blinkbtc">
     
     <!-- Additional Meta Tags -->
-    <meta name="theme-color" content="#FB5607">
+    <meta name="theme-color" content="#fc5805">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://donation-button.blink.sv/">
     
@@ -40,284 +40,768 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ── Blink design tokens (primitives) ────────────────────────
+           Grey = role, not lightness: grey5 interactive at rest, grey6
+           pressed, grey7 static (never tappable). Spacing 3·5·8·10·14·20·30,
+           radii 8 small / 16 large / 999 pill. */
         :root {
-            --blink-orange: #FB5607;
-            --blink-yellow: #FFB32C;
-            --blink-gradient: linear-gradient(45deg, #fe9f0c, #fc5805);
-            --light-bg: #F8F9FA;
-            --dark-bg: #222222;
-            --light-text: #333333;
-            --dark-text: #FFFFFF;
-            --light-card-bg: #FFFFFF;
-            --dark-card-bg: #333333;
-            --light-border: #E0E0E0;
-            --dark-border: #444444;
+            --space-1: 3px;
+            --space-2: 5px;
+            --space-3: 8px;
+            --space-4: 10px;
+            --space-5: 14px;
+            --space-6: 20px;
+            --space-7: 30px;
+
+            --radius-sm: 8px;
+            --radius-lg: 16px;
+            --radius-full: 999px;
+
+            --color-success: #00A700;
+            --color-error: #DC2626;
+            --color-warning: #F59E0B;
         }
-        
+
+        body.light-mode {
+            --primary: #fc5805;
+            --primary-pressed: #fd800b;
+            --text-primary: #3A3C51;
+            --text-secondary: #393939;
+            --text-muted: #9292A0;
+            --text-disabled: #AEAEB8;
+            --border: #E2E2E4;
+            --surface-interactive: #F2F2F4;
+            --surface-pressed: #E7E7E7;
+            --surface-static: #F9F9F9;
+            --surface-page: #FFFFFF;
+        }
+
+        body.dark-mode {
+            --primary: #ffad0d;
+            --primary-pressed: #fe990d;
+            --text-primary: #FAF9F9;
+            --text-secondary: #E9E8E8;
+            --text-muted: #CCCCCC;
+            --text-disabled: #949494;
+            --border: #393939;
+            --surface-interactive: #1d1d1d;
+            --surface-pressed: #2B2B2B;
+            --surface-static: #0F0F0F;
+            --surface-page: #111111;
+        }
+
         body {
             font-family: 'IBM Plex Sans', sans-serif;
             transition: background-color 0.3s, color 0.3s;
-            padding-top: 2rem;
-            padding-bottom: 2rem;
+            background-color: var(--surface-page);
+            color: var(--text-primary);
+            padding-top: var(--space-6);
+            padding-bottom: var(--space-7);
+            font-size: 16px;
+            line-height: 1.5;
         }
-        
-        body.light-mode {
-            background-color: var(--light-bg);
-            color: var(--light-text);
+
+        .page-layout {
+            max-width: 640px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        
-        body.dark-mode {
-            background-color: var(--dark-bg);
-            color: var(--dark-text);
+
+        /* Top section (header + username form) stays capped at 640px even
+           when the result area widens to two columns on desktop. */
+        .page-layout > .text-center,
+        .form-card {
+            max-width: 640px;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
         }
-        
+
+        /* Mobile: single column, preview right after the form.
+           Desktop (≥992px): two columns, preview sticky on the right. */
+        .page-columns {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .page-main {
+            display: contents;
+        }
+
+        #result-container {
+            display: none;
+            flex-direction: column;
+            order: 2;
+            /* Room for the fixed bottom Copy CTA */
+            padding-bottom: 92px;
+        }
+
+        #result-container.is-visible {
+            display: flex;
+        }
+
+        #result-container .result-main {
+            display: contents;
+        }
+
+        #result-container .page-side {
+            order: -1;
+        }
+
+        #copyCodeBtn {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: var(--space-6);
+            width: min(440px, calc(100% - 40px));
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Top-center toast notification ("Code updated") */
+        .toast-notification {
+            position: fixed;
+            top: var(--space-6);
+            left: 50%;
+            transform: translate(-50%, -10px);
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius-full);
+            background-color: var(--text-primary);
+            color: var(--surface-page);
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s, transform 0.2s;
+            z-index: 2000;
+        }
+
+        .toast-notification.is-visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        @media (min-width: 992px) {
+            .page-layout {
+                max-width: 940px;
+            }
+
+            #result-container.is-visible {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) 400px;
+                gap: var(--space-6);
+                align-items: start;
+            }
+
+            #result-container .result-main {
+                display: block;
+                min-width: 0;
+            }
+
+            #result-container .page-side {
+                position: sticky;
+                top: var(--space-6);
+            }
+        }
+
         .theme-switch {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: var(--space-6);
+            right: var(--space-6);
             z-index: 1000;
         }
-        
-        .logo {
-            max-width: 240px;
-            margin-bottom: 1rem;
+
+        .theme-switch .btn {
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border);
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
         }
-        
+
+        .theme-switch .btn:hover,
+        .theme-switch .btn:focus {
+            background-color: var(--surface-pressed);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+
+        .theme-switch .btn:active {
+            background-color: var(--surface-pressed);
+        }
+
+        /* ── Header ────────────────────────────────────────────────── */
+        .brand-mark {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--radius-full);
+            display: inline-block;
+            margin-bottom: var(--space-4);
+        }
+
         .page-title {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-size: 24px;
+            line-height: 1.2;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
         }
-        
+
         .lead {
+            font-size: 16px;
+            line-height: 1.5;
             font-weight: 400;
-            margin-bottom: 2rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-6);
+            max-width: 32ch;
+            margin-left: auto;
+            margin-right: auto;
         }
-        
+
+        /* ── Cards ─────────────────────────────────────────────────── */
         .card {
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            transition: background-color 0.3s, border-color 0.3s;
-            margin-bottom: 24px;
+            border-radius: var(--radius-lg);
+            background-color: var(--surface-static);
             border: none;
+            box-shadow: none;
+            overflow: hidden;
+            transition: background-color 0.3s;
+            margin-bottom: var(--space-5);
         }
-        
-        .light-mode .card {
-            background-color: var(--light-card-bg);
-            border-color: var(--light-border);
+
+        .card-body {
+            padding: var(--space-5) var(--space-6);
         }
-        
-        .dark-mode .card {
-            background-color: var(--dark-card-bg);
-            border-color: var(--dark-border);
-        }
-        
+
         .card-title {
-            font-weight: 600;
-            color: var(--blink-orange);
-            margin-bottom: 1rem;
-        }
-        
-        .form-label {
+            font-size: 20px;
+            line-height: 1.3;
             font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--space-4);
         }
-        
-        .dark-mode .form-label {
-            color: var(--dark-text);
+
+        .card p {
+            color: var(--text-secondary);
         }
-        
-        .dark-mode .form-text {
-            color: #CCC;
+
+        /* ── Labels & help text ────────────────────────────────────── */
+        .form-label {
+            font-size: 14px;
+            line-height: 1.4;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--space-3);
         }
-        
+
+        .form-text {
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--text-muted);
+        }
+
+        .dark-mode small,
         .dark-mode .text-muted {
-            color: #AAA !important;
+            color: var(--text-muted) !important;
         }
-        
-        .dark-mode small {
-            color: #CCC;
-        }
-        
-        .dark-mode p {
-            color: var(--dark-text);
-        }
-        
+
+        /* ── Inputs ────────────────────────────────────────────────── */
         .form-control {
-            border-radius: 8px;
-            padding: 12px;
+            border-radius: var(--radius-sm);
+            padding: var(--space-4) var(--space-5);
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            border: 2px solid transparent;
+            font-size: 16px;
             transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
-        
-        .light-mode .form-control {
-            background-color: var(--light-card-bg);
-            color: var(--light-text);
-            border-color: var(--light-border);
+
+        .form-control::placeholder {
+            color: var(--text-muted);
         }
-        
-        .dark-mode .form-control {
-            background-color: #444;
-            color: var(--dark-text);
-            border-color: var(--dark-border);
+
+        .form-control:focus {
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            border-color: var(--primary);
+            box-shadow: none;
         }
-        
-        .btn-primary, .btn-success {
-            background: var(--blink-gradient);
+
+        .form-control.is-success {
+            border-color: var(--color-success);
+        }
+
+        .form-control.is-error {
+            border-color: var(--color-error);
+        }
+
+        .form-select {
+            border-radius: var(--radius-sm);
+            padding: var(--space-4) var(--space-5);
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            border: 2px solid transparent;
+            font-size: 16px;
+        }
+
+        .form-select:focus {
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            border-color: var(--primary);
+            box-shadow: none;
+        }
+
+        /* Bootstrap's select arrow is dark grey — invisible on dark surfaces */
+        .dark-mode .form-select {
+            --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23CCCCCC' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        }
+
+        /* ── Buttons ───────────────────────────────────────────────── */
+        /* Primary: pill, primary fill, black label (AA: 6.54:1 vs 3.21:1
+           for white-on-orange), 700 weight. */
+        .btn-primary {
+            background-color: var(--primary);
             border: none;
-            font-weight: 600;
-            padding: 12px 20px;
-            border-radius: 8px;
+            color: #000000;
+            font-weight: 700;
+            font-size: 16px;
+            padding: var(--space-4) var(--space-6);
+            border-radius: var(--radius-full);
             transition: transform 0.2s, opacity 0.2s;
         }
-        
-        .btn-primary:hover, .btn-success:hover {
-            transform: translateY(-2px);
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: var(--primary);
+            color: #000000;
+            transform: translateY(-1px);
             opacity: 0.9;
-            background: var(--blink-gradient);
         }
-        
-        .btn-outline-secondary {
-            border-radius: 8px;
-            font-weight: 500;
+
+        .btn-primary:active {
+            background-color: var(--primary-pressed);
+            color: #000000;
+            transform: none;
+            opacity: 1;
         }
-        
-        .dark-mode .btn-outline-secondary {
-            color: #FFF;
-            border-color: #666;
+
+        /* Disabled interactive element = grey5 at 50% opacity */
+        .btn-primary:disabled,
+        .btn-primary.disabled {
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            opacity: 0.5;
+            transform: none;
         }
-        
-        .code-container {
-            border-radius: 8px;
-            padding: 20px;
-            position: relative;
-            transition: background-color 0.3s;
+
+        /* Secondary: pill, no border, transparent, primary label */
+        .btn-outline-primary {
+            background-color: transparent;
+            border: none;
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 16px;
+            padding: var(--space-5) var(--space-6);
+            border-radius: var(--radius-full);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            transition: background-color 0.2s, opacity 0.2s;
         }
-        
-        .light-mode .code-container {
-            background-color: #f1f1f1;
+
+        .btn-outline-primary:hover,
+        .btn-outline-primary:focus {
+            color: var(--primary);
+            background-color: var(--surface-interactive);
+            opacity: 0.9;
         }
-        
-        .dark-mode .code-container {
-            background-color: #444;
+
+        .btn-outline-primary:active {
+            color: var(--primary);
+            background-color: var(--surface-pressed);
         }
-        
+
+        .btn-block {
+            width: 100%;
+        }
+
+        /* Small icon copy button inside code block */
         .copy-btn {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: var(--space-4);
+            right: var(--space-4);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background-color: var(--surface-interactive);
+            color: var(--text-primary);
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
         }
-        
+
+        .copy-btn:hover,
+        .copy-btn:focus {
+            background-color: var(--surface-pressed);
+            color: var(--text-primary);
+            border-color: var(--border);
+        }
+
+        .copy-btn:active {
+            background-color: var(--surface-pressed);
+        }
+
+        .copy-btn.is-copied {
+            background-color: var(--color-success);
+            border-color: var(--color-success);
+            color: #000000;
+        }
+
+        .copy-btn.is-copied:hover {
+            background-color: var(--color-success);
+            color: #000000;
+        }
+
+        /* ── Code block ────────────────────────────────────────────── */
+        .code-container {
+            border-radius: var(--radius-sm);
+            padding: var(--space-6);
+            padding-right: 88px;
+            position: relative;
+            background-color: var(--surface-interactive);
+            transition: background-color 0.3s;
+        }
+
         pre {
             white-space: pre-wrap;
             overflow-x: auto;
             padding: 0;
             margin: 0;
-            color: inherit;
+            font-size: 12px;
+            line-height: 1.45;
+            color: var(--text-secondary);
         }
-        
-        .dark-mode pre {
-            color: #CCC;
+
+        /* Collapsed: clip to a short preview of the first lines with a fade.
+           The copy button stays reachable in the top-right corner. */
+        .code-container.is-collapsed pre {
+            max-height: 96px;
+            overflow: hidden;
+            -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
         }
-        
+
+        .code-expand {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            width: 100%;
+            margin-top: var(--space-3);
+            padding: var(--space-2) var(--space-4);
+            border: none;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: color 0.2s, background-color 0.2s;
+        }
+
+        .code-expand:hover,
+        .code-expand:focus-visible {
+            color: var(--primary);
+            background-color: var(--surface-interactive);
+        }
+
+        .code-expand svg {
+            transition: transform 0.2s;
+        }
+
+        .code-expand[aria-expanded="true"] svg {
+            transform: rotate(180deg);
+        }
+
+        /* ── Preview ───────────────────────────────────────────────── */
         #widget-preview {
-            border-radius: 12px;
-            padding: 20px;
-            transition: background-color 0.3s, border-color 0.3s;
+            border-radius: var(--radius-lg);
+            padding: var(--space-6);
             max-width: 400px;
             margin: 0 auto;
-            border: 2px dashed #ccc;
-            background-color: #fafafa;
+            background-color: var(--surface-interactive);
+            transition: background-color 0.3s;
         }
-        
-        #widget-preview::before {
-            content: "Preview Container (400px max-width)";
-            display: block;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
-            font-family: monospace;
-        }
-        
-        .light-mode #widget-preview {
-            background-color: var(--light-card-bg);
-            border: 1px solid var(--light-border);
-        }
-        
-        .dark-mode #widget-preview {
-            background-color: var(--dark-card-bg);
-            border: 1px solid var(--dark-border);
-        }
-        
+
+        /* ── Widget theme picker (mini preview cards) ──────────────── */
         .mode-options {
-            margin: 1rem 0;
             display: flex;
-            gap: 10px;
+            gap: var(--space-5);
+            margin-bottom: var(--space-6);
         }
-        
+
         .mode-options label {
             cursor: pointer;
-            padding: 8px 16px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: background-color 0.3s, color 0.3s;
-            text-align: center;
             flex: 1;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            border-radius: var(--radius-sm);
+            transition: opacity 0.2s;
         }
-        
-        .mode-options label {
-            background-color: #f1f1f1;
-            color: #333;
+
+        .mode-options label .theme-preview {
+            display: block;
+            border-radius: var(--radius-sm);
+            padding: var(--space-4);
+            margin-bottom: var(--space-3);
             border: 2px solid transparent;
+            transition: border-color 0.2s;
         }
-        
-        .dark-mode .mode-options label {
-            background-color: #444;
-            color: #ddd;
+
+        .mode-options .light-label .theme-preview {
+            background-color: #FFFFFF;
+            border-color: var(--border);
         }
-        
-        .mode-options label.selected {
-            border: 2px solid var(--blink-orange);
+
+        .mode-options .dark-label .theme-preview {
+            background-color: #1d1d1d;
+            border-color: var(--border);
         }
-        
-        .dark-mode .mode-options label.selected {
-            background-color: #333;
-            color: #FFF;
-            border: 2px solid var(--blink-orange);
+
+        .mode-options label.selected .theme-preview {
+            border-color: var(--primary);
         }
-        
+
+        .theme-preview .tp-bar,
+        .theme-preview .tp-input {
+            display: block;
+            height: 8px;
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--space-3);
+        }
+
+        .mode-options .light-label .tp-bar,
+        .mode-options .light-label .tp-input {
+            background-color: #F2F2F4;
+        }
+
+        .mode-options .dark-label .tp-bar,
+        .mode-options .dark-label .tp-input {
+            background-color: #2B2B2B;
+        }
+
+        .theme-preview .tp-button {
+            display: block;
+            height: 10px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(45deg, #ffbe0b, #fb5607);
+        }
+
+        .mode-options .theme-check {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .mode-options .theme-check svg {
+            visibility: hidden;
+        }
+
+        .mode-options label.selected .theme-check svg {
+            visibility: visible;
+        }
+
         .mode-options input[type="radio"] {
             position: absolute;
             opacity: 0;
         }
-        
-        /* Username validation styles */
+
+        /* Keyboard users get the same selected-ring as pointer users */
+        .mode-options input[type="radio"]:focus-visible + .theme-preview {
+            border-color: var(--primary);
+        }
+
+        /* ── Username validation feedback ──────────────────────────── */
         #username-validation {
-            margin-top: 8px;
-            font-size: 0.875rem;
+            margin-top: var(--space-3);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
-        
+
         #username-validation.text-success {
-            color: #28a745 !important;
+            color: var(--color-success) !important;
         }
-        
+
         #username-validation.text-danger {
-            color: #dc3545 !important;
+            color: var(--color-error) !important;
         }
-        
-        .dark-mode #username-validation.text-success {
-            color: #5cb85c !important;
-        }
-        
-        .dark-mode #username-validation.text-danger {
-            color: #e74c3c !important;
-        }
-        
+
         #username-validation a {
+            color: var(--primary);
             text-decoration: underline;
         }
-        
+
         #username-validation a:hover {
             text-decoration: none;
+        }
+
+        /* Currency validation feedback on token colors (overrides Bootstrap) */
+        #currencyValidation .text-success {
+            color: var(--color-success) !important;
+        }
+
+        #currencyValidation .text-warning {
+            color: var(--color-warning) !important;
+        }
+
+        /* ── Currency multiselect (WAI-ARIA combobox + listbox) ───── */
+        .ms-container {
+            position: relative;
+        }
+
+        .ms-control {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--space-2);
+            min-height: 48px;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-sm);
+            background-color: var(--surface-interactive);
+            border: 2px solid transparent;
+            cursor: text;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .ms-control:focus-within {
+            border-color: var(--primary);
+        }
+
+        .ms-chips {
+            display: contents;
+        }
+
+        .ms-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            background-color: var(--surface-static);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .ms-chip button {
+            border: none;
+            background: none;
+            padding: 0;
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .ms-chip button:hover {
+            color: var(--color-error);
+        }
+
+        .ms-search {
+            flex: 1;
+            min-width: 90px;
+            border: none;
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: inherit;
+            padding: var(--space-2) 0;
+            outline: none;
+        }
+
+        .ms-search::placeholder {
+            color: var(--text-muted);
+        }
+
+        .ms-caret {
+            margin-left: auto;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .ms-listbox {
+            position: absolute;
+            z-index: 1050;
+            top: calc(100% + var(--space-2));
+            left: 0;
+            right: 0;
+            max-height: 260px;
+            overflow-y: auto;
+            margin: 0;
+            padding: var(--space-2);
+            list-style: none;
+            border-radius: var(--radius-sm);
+            background-color: var(--surface-page);
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .ms-listbox[hidden] {
+            display: none;
+        }
+
+        .ms-group-label {
+            padding: var(--space-3) var(--space-4) var(--space-2);
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .ms-option {
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .ms-option[aria-selected="true"] .ms-option-check {
+            visibility: visible;
+        }
+
+        .ms-option-check {
+            visibility: hidden;
+            color: var(--color-success);
+            flex-shrink: 0;
+        }
+
+        .ms-option-name {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-left: auto;
+        }
+
+        .ms-option.ms-active {
+            background-color: var(--surface-interactive);
         }
     </style>
 </head>
@@ -331,133 +815,141 @@
     </div>
 
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-10 col-lg-8">
-                <div class="text-center mb-4">
-                    <img src="img/blink-light.svg" alt="Blink Logo" class="logo" id="header-logo">
-                    <h1 class="page-title">Blink Donate Button Generator</h1>
-                    <p class="lead">Create a Bitcoin Lightning donate button for your website</p>
-                </div>
-                
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <h2 class="card-title">Generate Your Donate Button</h2>
-                        <div class="mb-3">
-                            <label for="blinkUsername" class="form-label">Your Blink Username</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="blinkUsername" placeholder="Enter your Blink username (e.g., satoshi or satoshi@blink.sv)">
-                                <button class="btn btn-primary" id="generateBtn">Generate Code</button>
-                            </div>
-                            <div class="form-text">Enter your Blink username or full Lightning Address (e.g., satoshi or satoshi@blink.sv). The @blink.sv part will be automatically removed.</div>
+        <div class="page-layout">
+            <div class="text-center mb-4">
+                <img src="img/icon-light.png" alt="" class="brand-mark" id="brand-mark" width="64" height="64">
+                <h1 class="page-title">Blink Donate Button Generator</h1>
+                <p class="lead">Create a Bitcoin Lightning donate button for your website</p>
+            </div>
+
+            <div class="page-columns">
+                <div class="page-main">
+                    <div class="card mb-4 form-card">
+                        <div class="card-body">
+                            <label for="blinkUsername" class="form-label">Your Blink username</label>
+                            <input type="text" class="form-control" id="blinkUsername" placeholder="satoshi">
+                            <button class="btn btn-primary btn-block mt-3" id="generateBtn">Generate</button>
                         </div>
                     </div>
                 </div>
 
-                <div id="result-container" style="display: none;">
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h2 class="card-title">Customize Your Button</h2>
-                            
-                            <label class="form-label d-block">Widget Theme</label>
-                            <div class="mode-options">
-                                <label class="light-label">
-                                    <input type="radio" name="widget-theme" value="light" checked>
-                                    Light Mode
-                                </label>
-                                <label class="dark-label">
-                                    <input type="radio" name="widget-theme" value="dark">
-                                    Dark Mode
-                                </label>
-                            </div>
+                <div id="result-container">
+                    <div class="result-main">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h2 class="card-title">Embed code</h2>
 
-                            <div class="mt-4">
-                                <label for="currencyInput" class="form-label">Supported Currencies</label>
-                                <p class="form-text mb-3">Enter currency codes separated by commas (e.g., USD, EUR, GBP). Bitcoin sats are always included.</p>
-                                
-                                <div class="mb-3">
-                                    <input type="text" 
-                                           class="form-control" 
-                                           id="currencyInput" 
-                                           placeholder="USD, EUR, GBP, JPY, CAD, AUD"
-                                           value="USD">
-                                    <div class="form-text">
-                                        <div id="currencyValidation" class="mt-2"></div>
-                                        <details class="mt-2">
-                                            <summary style="cursor: pointer; color: var(--blink-orange);">
-                                                <small>View popular currencies</small>
-                                            </summary>
-                                            <div class="mt-2">
-                                                <small>
-                                                    <strong>Major:</strong> USD, EUR, GBP, JPY, CAD, AUD, CHF, CNY<br>
-                                                    <strong>Regional:</strong> ZAR, BRL, MXN, INR, KRW, SGD, THB, PHP<br>
-                                                    <strong>African:</strong> NGN, KES, GHS, UGX, TZS, RWF, ETB<br>
-                                                    <strong>Others:</strong> NOK, SEK, DKK, PLN, CZK, HUF, TRY, ILS, AED, SAR
-                                                </small>
-                                            </div>
-                                        </details>
-                                    </div>
+                                <div class="code-container is-collapsed" id="codeContainer">
+                                    <button class="btn btn-sm copy-btn" id="copyBtn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="40" y="40" width="160" height="176" rx="8"/><path d="M96 40a8 8 0 0 1 8-8h48a8 8 0 0 1 8 8v24h-64Z"/></svg>
+                                        <span class="copy-label">Copy</span>
+                                    </button>
+                                    <pre><code id="generatedCode"></code></pre>
                                 </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <label for="languageSelect" class="form-label">Widget Language</label>
-                                <p class="form-text mb-3">Choose the language for the widget's user interface text.</p>
-                                
-                                <div class="mb-3">
-                                    <select class="form-select" id="languageSelect">
-                                        <!-- Languages populated dynamically by generator.js -->
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <label for="buttonWidth" class="form-label">Widget Width (Optional)</label>
-                                <p class="form-text mb-3">Set a custom width for the entire donation widget in pixels. Leave empty for responsive design (recommended).</p>
-                                
-                                <div class="mb-3">
-                                    <input type="number" 
-                                           class="form-control" 
-                                           id="buttonWidth" 
-                                           placeholder="310"
-                                           min="200"
-                                           max="500"
-                                           step="10">
-                                    <div class="form-text">
-                                        <small>Recommended: 200-500px. The entire widget will be responsive on smaller screens.</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h2 class="card-title">Your Donate Button Code</h2>
-                            <p>Copy and paste this code into your website HTML:</p>
-                            
-                            <div class="code-container">
-                                <button class="btn btn-sm btn-outline-secondary copy-btn" id="copyBtn">
-                                    Copy
+                                <button class="code-expand" id="codeExpandBtn" aria-expanded="false" aria-controls="codeContainer">
+                                    <span class="code-expand-label">Show full code</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M40 96l88 88 88-88"/></svg>
                                 </button>
-                                <pre><code id="generatedCode"></code></pre>
                             </div>
                         </div>
+
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h2 class="card-title">Customize</h2>
+
+                                <label class="form-label d-block">Theme</label>
+                                <div class="mode-options">
+                                    <label class="light-label">
+                                        <input type="radio" name="widget-theme" value="light" checked>
+                                        <span class="theme-preview" aria-hidden="true">
+                                            <span class="tp-bar" style="width: 40%;"></span>
+                                            <span class="tp-input"></span>
+                                            <span class="tp-button"></span>
+                                        </span>
+                                        <span class="theme-check">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M40 128l64 64L216 72"/></svg>
+                                            Light mode
+                                        </span>
+                                    </label>
+                                    <label class="dark-label">
+                                        <input type="radio" name="widget-theme" value="dark">
+                                        <span class="theme-preview" aria-hidden="true">
+                                            <span class="tp-bar" style="width: 40%;"></span>
+                                            <span class="tp-input"></span>
+                                            <span class="tp-button"></span>
+                                        </span>
+                                        <span class="theme-check">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M40 128l64 64L216 72"/></svg>
+                                            Dark mode
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label for="currencyInput" class="form-label">Supported currencies</label>
+                                    <p class="form-text mb-3">Fiat currencies donors can pick from. sats are always included.</p>
+
+                                    <div class="mb-3">
+                                        <div id="currencyMultiselect"></div>
+                                        <!-- Kept as the canonical value store: comma-separated codes,
+                                             read by generator.js. Hidden once the multiselect mounts. -->
+                                        <input type="text" id="currencyInput" value="USD" aria-hidden="true" tabindex="-1" style="position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px;">
+                                        <div class="form-text">
+                                            <div id="currencyValidation" class="mt-2"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label for="languageSelect" class="form-label">Language</label>
+
+                                    <div class="mb-3">
+                                        <select class="form-select" id="languageSelect">
+                                            <!-- Languages populated dynamically by generator.js -->
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <label for="buttonWidth" class="form-label">Width (optional)</label>
+
+                                    <div class="mb-3">
+                                        <input type="number"
+                                               class="form-control"
+                                               id="buttonWidth"
+                                               placeholder="310"
+                                               min="200"
+                                               max="500"
+                                               step="10">
+                                        <div class="form-text">
+                                            <small>200–500px. Leave empty for responsive (recommended).</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-block mb-4" id="copyCodeBtn">
+                            <span class="copy-label">Copy code</span>
+                        </button>
                     </div>
 
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h2 class="card-title">Preview</h2>
-                            <div id="widget-preview" class="text-center">
-                                <!-- Preview of the widget will be inserted here -->
+                    <aside class="page-side">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h2 class="card-title">Live preview</h2>
+                                <div id="widget-preview" class="text-center">
+                                    <!-- Preview of the widget will be inserted here -->
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </aside>
                 </div>
             </div>
         </div>
     </div>
 
+    <script src="js/currency-multiselect.js"></script>
     <script src="js/generator.js"></script>
 </body>
-</html> 
-</html> 
+</html>

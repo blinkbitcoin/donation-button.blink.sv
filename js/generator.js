@@ -148,6 +148,65 @@ function initGenerator() {
         'NGN', 'KES', 'GHS', 'UGX', 'TZS', 'RWF', 'ETB',
         'NOK', 'SEK', 'DKK', 'PLN', 'CZK', 'HUF', 'TRY', 'ILS', 'AED', 'SAR'
     ];
+
+    // Grouped options with human-readable names for the currency multiselect
+    // (js/currency-multiselect.js). Codes must stay a subset of
+    // popularCurrencies above so validation feedback stays consistent.
+    const currencyGroups = [
+        {
+            label: 'Major',
+            options: [
+                { code: 'USD', name: 'US Dollar' },
+                { code: 'EUR', name: 'Euro' },
+                { code: 'GBP', name: 'British Pound' },
+                { code: 'JPY', name: 'Japanese Yen' },
+                { code: 'CAD', name: 'Canadian Dollar' },
+                { code: 'AUD', name: 'Australian Dollar' },
+                { code: 'CHF', name: 'Swiss Franc' },
+                { code: 'CNY', name: 'Chinese Yuan' },
+            ],
+        },
+        {
+            label: 'Regional',
+            options: [
+                { code: 'ZAR', name: 'South African Rand' },
+                { code: 'BRL', name: 'Brazilian Real' },
+                { code: 'MXN', name: 'Mexican Peso' },
+                { code: 'INR', name: 'Indian Rupee' },
+                { code: 'KRW', name: 'South Korean Won' },
+                { code: 'SGD', name: 'Singapore Dollar' },
+                { code: 'THB', name: 'Thai Baht' },
+                { code: 'PHP', name: 'Philippine Peso' },
+            ],
+        },
+        {
+            label: 'African',
+            options: [
+                { code: 'NGN', name: 'Nigerian Naira' },
+                { code: 'KES', name: 'Kenyan Shilling' },
+                { code: 'GHS', name: 'Ghanaian Cedi' },
+                { code: 'UGX', name: 'Ugandan Shilling' },
+                { code: 'TZS', name: 'Tanzanian Shilling' },
+                { code: 'RWF', name: 'Rwandan Franc' },
+                { code: 'ETB', name: 'Ethiopian Birr' },
+            ],
+        },
+        {
+            label: 'Others',
+            options: [
+                { code: 'NOK', name: 'Norwegian Krone' },
+                { code: 'SEK', name: 'Swedish Krona' },
+                { code: 'DKK', name: 'Danish Krone' },
+                { code: 'PLN', name: 'Polish Złoty' },
+                { code: 'CZK', name: 'Czech Koruna' },
+                { code: 'HUF', name: 'Hungarian Forint' },
+                { code: 'TRY', name: 'Turkish Lira' },
+                { code: 'ILS', name: 'Israeli Shekel' },
+                { code: 'AED', name: 'UAE Dirham' },
+                { code: 'SAR', name: 'Saudi Riyal' },
+            ],
+        },
+    ];
     
     // Available languages for the widget
     const availableLanguages = [
@@ -192,33 +251,47 @@ function initGenerator() {
         { code: 'ps', name: 'پښتو' }
     ];
     
+    // Site theme: follow the OS/browser preference on first load, then let
+    // the visitor override with the toggle. The widget theme mirrors the
+    // site theme until the visitor picks one explicitly.
+    const MOON_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>';
+    const SUN_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/></svg>';
+
+    function applySiteTheme(isDark) {
+        const body = document.body;
+        const brandMark = document.getElementById('brand-mark');
+
+        body.classList.toggle('dark-mode', isDark);
+        body.classList.toggle('light-mode', !isDark);
+
+        themeToggle.innerHTML = isDark ? SUN_ICON : MOON_ICON;
+        themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        themeToggle.setAttribute('title', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+
+        if (brandMark) {
+            brandMark.src = isDark ? 'img/icon-dark.png' : 'img/icon-light.png';
+        }
+    }
+
+    // First load: match the system/browser color scheme (guarded — jsdom and
+    // very old browsers lack matchMedia; fall back to light).
+    const prefersDark = typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applySiteTheme(prefersDark);
+
+    // Mirror the system theme onto the widget preview and generated code.
+    if (prefersDark) {
+        currentWidgetTheme = 'dark';
+        const darkRadio = document.querySelector('input[name="widget-theme"][value="dark"]');
+        if (darkRadio) {
+            darkRadio.checked = true;
+        }
+    }
+
     // Toggle site theme between light and dark
     themeToggle.addEventListener('click', function() {
-        const body = document.body;
-        const headerLogo = document.getElementById('header-logo');
-        const isCurrentlyDark = body.classList.contains('dark-mode');
-        
-        if (isCurrentlyDark) {
-            body.classList.remove('dark-mode');
-            body.classList.add('light-mode');
-            themeToggle.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon" viewBox="0 0 16 16"><path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/></svg>';
-            if (headerLogo) {
-                headerLogo.src = 'img/blink-light.svg';
-            }
-            // Re-apply accessible label after innerHTML swap (now in light mode)
-            themeToggle.setAttribute('aria-label', 'Switch to dark mode');
-            themeToggle.setAttribute('title', 'Switch to dark mode');
-        } else {
-            body.classList.remove('light-mode');
-            body.classList.add('dark-mode');
-            themeToggle.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-sun" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/></svg>';
-            if (headerLogo) {
-                headerLogo.src = 'img/blink-dark.svg';
-            }
-            // Re-apply accessible label after innerHTML swap (now in dark mode)
-            themeToggle.setAttribute('aria-label', 'Switch to light mode');
-            themeToggle.setAttribute('title', 'Switch to light mode');
-        }
+        applySiteTheme(!document.body.classList.contains('dark-mode'));
     });
     
     // Populate language dropdown dynamically
@@ -234,6 +307,21 @@ function initGenerator() {
     
     // Initialize language dropdown on page load
     populateLanguageDropdown();
+
+    // Mount the accessible currency multiselect over the hidden #currencyInput.
+    // The multiselect writes comma-separated codes back into the input and
+    // fires bubbling `input` events, so the listener below keeps working.
+    // Guarded: the component is loaded via its own <script> tag and may be
+    // absent in test contexts that stub only the generator's minimal DOM.
+    if (typeof window !== 'undefined' &&
+        window.BlinkCurrencyMultiselect &&
+        document.getElementById('currencyMultiselect')) {
+        window.BlinkCurrencyMultiselect.init({
+            mountId: 'currencyMultiselect',
+            inputId: 'currencyInput',
+            groups: currencyGroups,
+        });
+    }
     
     // Initialize theme selection visual feedback
     updateThemeSelection();
@@ -245,6 +333,7 @@ function initGenerator() {
             updateThemeSelection();
             updateWidgetPreview();
             updateGeneratedCode();
+            showToast('Code updated');
         });
     });
     
@@ -268,13 +357,15 @@ function initGenerator() {
         validateCurrencies();
         updateWidgetPreview();
         updateGeneratedCode();
+        showToast('Code updated');
     });
-    
+
     // Listen for language selection changes
     languageSelect.addEventListener('change', function() {
         selectedLanguage = this.value;
         updateWidgetPreview();
         updateGeneratedCode();
+        showToast('Code updated');
     });
     
     // Update selected currencies array based on text input
@@ -315,10 +406,9 @@ function initGenerator() {
         if (validCurrencies.length > 0) {
             validationHtml += `<small class="text-success">✓ Supported: ${validCurrencies.join(', ')}</small>`;
         }
-        
+
         if (unknownCurrencies.length > 0) {
-            validationHtml += `${validCurrencies.length > 0 ? '<br>' : ''}<small class="text-warning">⚠ Unknown (will attempt): ${unknownCurrencies.join(', ')}</small>`;
-            validationHtml += `<br><small class="text-muted">Unknown currencies may work if supported by Blink API</small>`;
+            validationHtml += `${validCurrencies.length > 0 ? '<br>' : ''}<small class="text-warning">⚠ Unknown: ${unknownCurrencies.join(', ')} — may still work via the Blink API</small>`;
         }
         
         currencyValidation.innerHTML = validationHtml;
@@ -429,16 +519,32 @@ function initGenerator() {
         if (existingValidation) {
             existingValidation.remove();
         }
-        
-        // Create validation message element
+
+        // Reflect the state on the input itself (border per Blink primitives:
+        // no border at rest, coloured border for error/success).
+        blinkUsernameInput.classList.remove('is-success', 'is-error');
+        blinkUsernameInput.classList.add(isError ? 'is-error' : 'is-success');
+        blinkUsernameInput.setAttribute('aria-invalid', isError ? 'true' : 'false');
+
+        // Create validation message element with an inline status icon
+        // (Phosphor outline: check-circle / info).
+        const icon = isError
+            ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><circle cx="128" cy="128" r="96"/><path d="M128 80v56"/><circle cx="128" cy="172" r="2"/></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="none" stroke="currentColor" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><circle cx="128" cy="128" r="96"/><path d="M88 136l28 28 56-64"/></svg>';
+
         const validationDiv = document.createElement('div');
         validationDiv.id = 'username-validation';
         validationDiv.className = `form-text mt-2 ${isError ? 'text-danger' : 'text-success'}`;
-        validationDiv.innerHTML = message;
-        
-        // Insert after the input group
-        const inputGroup = blinkUsernameInput.parentElement;
-        inputGroup.parentElement.insertBefore(validationDiv, inputGroup.nextSibling);
+        validationDiv.setAttribute('role', isError ? 'alert' : 'status');
+        validationDiv.innerHTML = `${icon}<span>${message}</span>`;
+
+        // Insert after the input (and its helper text, if present)
+        const helperText = blinkUsernameInput.nextElementSibling;
+        if (helperText && helperText.classList && helperText.classList.contains('form-text')) {
+            helperText.parentElement.insertBefore(validationDiv, helperText.nextSibling);
+        } else {
+            blinkUsernameInput.parentElement.insertBefore(validationDiv, blinkUsernameInput.nextSibling);
+        }
     }
 
     // Clean username input - strip @blink.sv if user enters full Lightning Address
@@ -465,7 +571,7 @@ function initGenerator() {
         currentUsername = cleanUsernameInput(rawInput);
         
         if (!currentUsername) {
-            alert('Please enter your Blink username');
+            showUsernameValidation('Enter your Blink username.', true);
             return;
         }
         
@@ -485,21 +591,21 @@ function initGenerator() {
             if (!usernameExists) {
                 // Username doesn't exist - show error and prevent generation
                 showUsernameValidation(
-                    'This Blink username does not exist yet. <a href="https://get.blink.sv" target="_blank" style="color: var(--blink-orange);">Download Blink now</a> and get it for yourself!',
+                    'This username does not exist yet. <a href="https://get.blink.sv" target="_blank">Download Blink</a> and claim it.',
                     true
                 );
                 return;
             }
-            
+
             // Username exists - show success message
-            showUsernameValidation('✓ Blink username found!', false);
+            showUsernameValidation('Username found!', false);
         
         // Update selected currencies
         updateSelectedCurrencies();
         validateCurrencies();
         
         // Show the result container
-        resultContainer.style.display = 'block';
+        resultContainer.classList.add('is-visible');
         
         // Update generated code and preview
         updateGeneratedCode();
@@ -514,14 +620,14 @@ function initGenerator() {
             console.error('Error during code generation:', error);
             
             if (error.message === 'INVALID_USERNAME_FORMAT') {
-                showUsernameValidation('Invalid username format. Please enter a valid Blink username without special characters or domains.', true);
+                showUsernameValidation('Invalid username — letters, numbers and underscores only.', true);
             } else {
                 showUsernameValidation('Error checking username. Please try again.', true);
             }
         } finally {
             // Re-enable generate button
             generateBtn.disabled = false;
-            generateBtn.textContent = 'Generate Code';
+            generateBtn.textContent = 'Generate';
         }
     }
     
@@ -574,19 +680,19 @@ function initGenerator() {
     function updateWidgetPreview() {
         // Clear previous preview completely
         widgetPreview.innerHTML = '<div id="blink-pay-button-container"></div>';
-        
-        // Add debug info
-        const debugInfo = document.createElement('div');
-        debugInfo.style.cssText = 'font-size: 12px; color: #666; text-align: center; margin-top: 10px; font-family: monospace;';
-        debugInfo.textContent = `Widget Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (370px max)'}`;
-        widgetPreview.appendChild(debugInfo);
-        
+
+        // Subtle caption showing the effective width setting
+        const caption = document.createElement('div');
+        caption.style.cssText = 'font-size: 12px; color: var(--text-muted, #666); text-align: center; margin-top: 10px;';
+        caption.textContent = currentButtonWidth ? `Width: ${currentButtonWidth}px` : 'Responsive width';
+        widgetPreview.appendChild(caption);
+
         // Check if BlinkPayButton is already loaded
         if (window.BlinkPayButton) {
             // Force a new widget initialization with delay
             setTimeout(() => {
                 const currencyConfig = generateCurrencyConfig();
-                
+
                 window.BlinkPayButton.init({
                     username: currentUsername,
                     containerId: 'blink-pay-button-container',
@@ -597,30 +703,18 @@ function initGenerator() {
                     supportedCurrencies: currencyConfig,
                     debug: true
                 });
-                
-                // Update debug info after initialization
-                setTimeout(() => {
-                    const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
-                    const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
-                    if (widget && button) {
-                        const widgetWidth = widget.offsetWidth;
-                        const buttonWidth = button.offsetWidth;
-                        const maxWidth = getComputedStyle(button).maxWidth;
-                        debugInfo.textContent = `Widget Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (370px max)'} | Widget: ${widgetWidth}px | Button: ${buttonWidth}px`;
-                    }
-                }, 1000);
             }, 50);
         } else {
             // Load the widget script dynamically for the preview
             const script = document.createElement('script');
             script.src = 'js/blink-pay-button.js';
             document.head.appendChild(script);
-            
+
             // Initialize the widget once the script is loaded
             script.onload = function() {
                 setTimeout(() => {
                     const currencyConfig = generateCurrencyConfig();
-                    
+
                     window.BlinkPayButton.init({
                         username: currentUsername,
                         containerId: 'blink-pay-button-container',
@@ -631,18 +725,6 @@ function initGenerator() {
                         supportedCurrencies: currencyConfig,
                         debug: true
                     });
-                    
-                    // Update debug info after initialization
-                    setTimeout(() => {
-                        const widget = document.querySelector('#blink-pay-button-container .blink-pay-widget');
-                        const button = document.querySelector('#blink-pay-button-container .blink-pay-button');
-                        if (widget && button) {
-                            const widgetWidth = widget.offsetWidth;
-                            const buttonWidth = button.offsetWidth;
-                            const maxWidth = getComputedStyle(button).maxWidth;
-                            debugInfo.textContent = `Widget Width: ${currentButtonWidth ? currentButtonWidth + 'px' : 'Responsive (370px max)'} | Widget: ${widgetWidth}px | Button: ${buttonWidth}px`;
-                        }
-                    }, 1000);
                 }, 50);
             };
         }
@@ -651,19 +733,33 @@ function initGenerator() {
     // Copy the generated code to clipboard
     function copyToClipboard() {
         const codeText = generatedCodeElement.textContent;
-        
+
         navigator.clipboard.writeText(codeText)
             .then(() => {
-                // Show success feedback
-                copyBtn.innerText = 'Copied!';
-                copyBtn.classList.add('btn-success');
-                copyBtn.classList.remove('btn-outline-secondary');
-                
+                // Show success feedback on every copy control (the small
+                // button in the code block and the full-width "Copy code").
+                const copyButtons = [copyBtn, document.getElementById('copyCodeBtn')].filter(Boolean);
+                copyButtons.forEach(btn => {
+                    const label = btn.querySelector('.copy-label');
+                    if (label) {
+                        label.textContent = 'Copied!';
+                    } else {
+                        btn.innerText = 'Copied!';
+                    }
+                    btn.classList.add('is-copied');
+                });
+
                 // Reset after 2 seconds
                 setTimeout(() => {
-                    copyBtn.innerText = 'Copy';
-                    copyBtn.classList.remove('btn-success');
-                    copyBtn.classList.add('btn-outline-secondary');
+                    copyButtons.forEach(btn => {
+                        const label = btn.querySelector('.copy-label');
+                        if (label) {
+                            label.textContent = btn.id === 'copyCodeBtn' ? 'Copy code' : 'Copy';
+                        } else {
+                            btn.innerText = 'Copy';
+                        }
+                        btn.classList.remove('is-copied');
+                    });
                 }, 2000);
             })
             .catch(err => {
@@ -671,10 +767,52 @@ function initGenerator() {
                 alert('Failed to copy to clipboard');
             });
     }
-    
+
     // Event listeners
     generateBtn.addEventListener('click', () => generateCode());
     copyBtn.addEventListener('click', copyToClipboard);
+
+    // Optional controls added by the page markup — guard for test contexts
+    // that stub only the minimal generator DOM.
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    if (copyCodeBtn) {
+        copyCodeBtn.addEventListener('click', copyToClipboard);
+    }
+
+    // Expand/collapse the generated code block (starts collapsed to a short
+    // preview so the result section stays compact).
+    const codeExpandBtn = document.getElementById('codeExpandBtn');
+    const codeContainer = document.getElementById('codeContainer');
+    if (codeExpandBtn && codeContainer) {
+        codeExpandBtn.addEventListener('click', function() {
+            const collapsed = codeContainer.classList.toggle('is-collapsed');
+            codeExpandBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            const label = codeExpandBtn.querySelector('.code-expand-label');
+            if (label) {
+                label.textContent = collapsed ? 'Show full code' : 'Hide code';
+            }
+        });
+    }
+
+    // Small top-center toast shown whenever a customize setting changes the
+    // generated code. Created lazily so it never exists before it is needed.
+    let toastElement = null;
+    let toastTimeout = null;
+    function showToast(message) {
+        if (!toastElement) {
+            toastElement = document.createElement('div');
+            toastElement.className = 'toast-notification';
+            toastElement.setAttribute('role', 'status');
+            toastElement.setAttribute('aria-live', 'polite');
+            document.body.appendChild(toastElement);
+        }
+        toastElement.textContent = message;
+        toastElement.classList.add('is-visible');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+            toastElement.classList.remove('is-visible');
+        }, 1500);
+    }
     
     // Allow Enter key to trigger generation
     blinkUsernameInput.addEventListener('keypress', function(e) {
@@ -685,6 +823,15 @@ function initGenerator() {
     
     // Real-time username cleaning - clean input as user types
     blinkUsernameInput.addEventListener('input', function(e) {
+        // Editing the username invalidates the previous check — clear the
+        // success/error border and message until Generate runs again.
+        const staleValidation = document.getElementById('username-validation');
+        if (staleValidation) {
+            staleValidation.remove();
+        }
+        blinkUsernameInput.classList.remove('is-success', 'is-error');
+        blinkUsernameInput.removeAttribute('aria-invalid');
+
         const rawInput = this.value;
         const cleaned = cleanUsernameInput(rawInput);
         
@@ -703,7 +850,7 @@ function initGenerator() {
         // keep the preview and generated code in sync as the username changes.
         // This is a local-only refresh — the async existence check stays gated behind
         // Generate / Enter, so we don't hit the network on every keystroke.
-        if (resultContainer.style.display === 'block') {
+        if (resultContainer.classList.contains('is-visible')) {
             clearTimeout(this.previewTimeout);
             this.previewTimeout = setTimeout(() => {
                 const nextUsername = cleanUsernameInput(blinkUsernameInput.value);
@@ -722,6 +869,7 @@ function initGenerator() {
         currentButtonWidth = value && value >= 200 && value <= 500 ? value : null;
         updateWidgetPreview();
         updateGeneratedCode();
+        showToast('Code updated');
     });
 
     // Deep-link bootstrap: if the page was reached via a username-customized URL
