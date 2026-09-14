@@ -1,7 +1,22 @@
 /**
  * Blink Pay Button Widget
  * A simple widget for accepting Bitcoin Lightning donations via Blink wallet
- * Version: 1.5.2 - Copy: the widget is now the "Donate Button" (was "Donation Button")
+ * Version: 1.5.3 - Fix: a sats donation to a recipient whose default wallet is USD
+ *                  was converted to USD cents before invoicing, so the donor was
+ *                  asked for MORE than they entered: the cent amount rounds to a
+ *                  whole cent (~13 sats at current rates) and Blink then prices
+ *                  those cents back into sats at the stablesats dealer spread
+ *                  (1000 sats => 78 cents => ~1007 sats, ~0.7% high). Sat amounts
+ *                  now stay sat-denominated via
+ *                  lnUsdInvoiceBtcDenominatedCreateOnBehalfOfRecipient, which
+ *                  invoices the exact sats and credits the USD wallet with their
+ *                  value at creation. Fiat donations still invoice in cents, and
+ *                  BTC-wallet recipients are untouched. Also drops the
+ *                  fetchExchangeRate('USD') round-trip (and its failure mode) from
+ *                  the sats path. createInvoice() takes an optional 4th argument
+ *                  (amountUnit); omitting it keeps the previous behaviour.
+ *                  No public API / DOM changes.
+ *          1.5.2 - Copy: the widget is now the "Donate Button" (was "Donation Button")
  *                  across the generator UI, docs and manual test pages. The invoice memo
  *                  sent on both receive paths changes from "<username> donation button"
  *                  to "<username> donate button". On the custodial path that memo is the
@@ -1522,20 +1537,30 @@
                     }
                     this.log(`Retrieved wallet info:`, walletInfo);
                     
-                    // Step 2: Convert amount to the correct unit based on wallet currency
-                    let convertedAmount;
+                    // Step 2: Convert the amount to the unit the invoice is denominated in
+                    let convertedAmount, amountUnit;
                     if (walletInfo.currency === 'BTC') {
                         // Convert to satoshis for BTC wallets
                         convertedAmount = this.convertToSatoshis(amount, this.selectedCurrency);
+                        amountUnit = 'sats';
                         this.log(`Converted to ${convertedAmount} satoshis for BTC wallet`);
                     } else if (walletInfo.currency === 'USD') {
-                        // Convert to USD cents for USD wallets
-                        // First ensure we have USD rates if converting from sats
-                        if (this.selectedCurrency === 'sats' && !this.exchangeRates['USD']) {
-                            await this.fetchExchangeRate('USD');
+                        if (this.selectedCurrency === 'sats') {
+                            // A sats donation stays sat-denominated even into a USD wallet.
+                            // Routing it through convertToUsdCents() would round to a whole
+                            // cent and then have Blink price those cents back into sats at
+                            // the dealer spread, so the donor was asked for more than they
+                            // typed (1000 sats => 78 cents => ~1007 sats). The
+                            // BTC-denominated mutation invoices the exact sats and credits
+                            // the USD wallet with their value at creation.
+                            convertedAmount = Math.round(amount);
+                            amountUnit = 'sats';
+                            this.log(`Keeping ${convertedAmount} satoshis for USD wallet (BTC-denominated invoice)`);
+                        } else {
+                            convertedAmount = this.convertToUsdCents(amount, this.selectedCurrency);
+                            amountUnit = 'cents';
+                            this.log(`Converted to ${convertedAmount} USD cents for USD wallet`);
                         }
-                        convertedAmount = this.convertToUsdCents(amount, this.selectedCurrency);
-                        this.log(`Converted to ${convertedAmount} USD cents for USD wallet`);
                     } else {
                         throw new Error(`Unsupported wallet currency: ${walletInfo.currency}`);
                     }
@@ -1545,7 +1570,7 @@
                     if (typeof this.createInvoice !== 'function') {
                         throw new Error('createInvoice is not a function - this context may be lost');
                     }
-                    const invoiceResult = await this.createInvoice(walletInfo.id, convertedAmount, walletInfo.currency);
+                    const invoiceResult = await this.createInvoice(walletInfo.id, convertedAmount, walletInfo.currency, amountUnit);
                     if (!invoiceResult || !invoiceResult.paymentRequest) {
                         throw new Error('Could not create invoice');
                     }
@@ -1863,9 +1888,15 @@
             }
         },
         
-        // Create a lightning invoice
-        createInvoice: async function(walletId, amount, currency) {
+        // Create a lightning invoice.
+        // `currency` is the RECIPIENT WALLET's currency; `amountUnit` is the unit
+        // `amount` is expressed in ('sats' or 'cents'). A USD wallet accepts both:
+        // cents for fiat donations, sats for sat donations (BTC-denominated, so the
+        // donor is quoted exactly the sats they entered). Omitting `amountUnit`
+        // keeps the historical behaviour (sats for BTC, cents for USD).
+        createInvoice: async function(walletId, amount, currency, amountUnit) {
             let mutation, mutationName, variables, expiryMinutes;
+            const unit = amountUnit || (currency === 'BTC' ? 'sats' : 'cents');
             
             if (currency === 'BTC') {
                 // Use BTC mutation - 15 minutes expiry
@@ -1891,6 +1922,32 @@
             };
             
                 mutationName = 'lnInvoiceCreateOnBehalfOfRecipient';
+            } else if (currency === 'USD' && unit === 'sats') {
+                // Sat-denominated invoice into a USD wallet - 5 minutes expiry
+                // (an exchange rate is attached to the amount). The donor pays the
+                // exact sats entered; Blink credits the wallet their USD value.
+                expiryMinutes = 5;
+                mutation = `
+                    mutation LnUsdInvoiceBtcDenominatedCreateOnBehalfOfRecipient($input: LnUsdInvoiceBtcDenominatedCreateOnBehalfOfRecipientInput!) {
+                        lnUsdInvoiceBtcDenominatedCreateOnBehalfOfRecipient(input: $input) {
+                            invoice {
+                                paymentRequest
+                                satoshis
+                            }
+                        }
+                    }
+                `;
+                
+                variables = {
+                    input: {
+                        amount: amount.toString(),
+                        recipientWalletId: walletId,
+                        memo: `${this.username} donate button`,
+                        expiresIn: "5"
+                    }
+                };
+                
+                mutationName = 'lnUsdInvoiceBtcDenominatedCreateOnBehalfOfRecipient';
             } else if (currency === 'USD') {
                 // Use USD mutation - 5 minutes expiry
                 expiryMinutes = 5;
@@ -2777,7 +2834,7 @@
             }
             
             // Add widget version for tracking
-            params.append('widget_version', '1.5.2');
+            params.append('widget_version', '1.5.3');
             
             return `${baseUrl}?${params.toString()}`;
         }
